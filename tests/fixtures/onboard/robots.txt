@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /private/
+Disallow: /wp-admin/
+Crawl-delay: 1
+
+Sitemap: https://birdsite.test/sitemap_index.xml
+Sitemap: https://other.test/elsewhere.xml

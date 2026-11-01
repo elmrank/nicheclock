@@ -1,0 +1,9 @@
+title = "nicheclock gitleaks config"
+
+[extend]
+useDefault = true
+
+# Dummy credentials used by the unit tests (fake keys for a mocked server, not real secrets).
+[[allowlists]]
+description = "test fixtures"
+paths = ['''tests/llm_fakes\.py''', '''tests/test_hosted_export\.py''']

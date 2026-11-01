@@ -1,0 +1,37 @@
+{
+  "source": {
+    "name": "Google Trends 'Trending now' category filter",
+    "url": "https://trends.google.com/trending?geo=US&hours=168",
+    "verified_on": "2026-11-01",
+    "verified_by": "opened the page in headless Chromium and read the category dropdown (button 'All categories, select category'); United States, Past 7 days",
+    "note": "Google's own list has 19 entries after 'All categories'. Ids are our slugs; labels are Google's, verbatim. 'Other' is Google's own bucket and is also where we put anything our class rules do not claim.",
+    "trends_rows_snapshot": {
+      "All categories": 3377, "Autos and Vehicles": 24, "Beauty and Fashion": 17, "Business and Finance": 213,
+      "Climate": 42, "Entertainment": 638, "Food and Drink": 30, "Games": 74, "Health": 32,
+      "Hobbies and Leisure": 68, "Jobs and Education": 24, "Law and Government": 238, "Other": 205,
+      "Pets and Animals": 9, "Politics": 166, "Science": 39, "Shopping": 22, "Sports": 1795,
+      "Technology": 48, "Travel and Transportation": 17
+    }
+  },
+  "categories": [
+    {"id": "autos-vehicles", "label": "Autos and Vehicles"},
+    {"id": "beauty-fashion", "label": "Beauty and Fashion"},
+    {"id": "business-finance", "label": "Business and Finance"},
+    {"id": "climate", "label": "Climate"},
+    {"id": "entertainment", "label": "Entertainment"},
+    {"id": "food-drink", "label": "Food and Drink"},
+    {"id": "games", "label": "Games"},
+    {"id": "health", "label": "Health"},
+    {"id": "hobbies-leisure", "label": "Hobbies and Leisure"},
+    {"id": "jobs-education", "label": "Jobs and Education"},
+    {"id": "law-government", "label": "Law and Government"},
+    {"id": "other", "label": "Other"},
+    {"id": "pets-animals", "label": "Pets and Animals"},
+    {"id": "politics", "label": "Politics"},
+    {"id": "science", "label": "Science"},
+    {"id": "shopping", "label": "Shopping"},
+    {"id": "sports", "label": "Sports"},
+    {"id": "technology", "label": "Technology"},
+    {"id": "travel-transportation", "label": "Travel and Transportation"}
+  ]
+}

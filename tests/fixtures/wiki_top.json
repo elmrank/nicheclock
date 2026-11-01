@@ -1,0 +1,43 @@
+{
+ "items": [
+  {
+   "project": "en.wikipedia",
+   "access": "all-access",
+   "year": "2026",
+   "month": "10",
+   "day": "29",
+   "articles": [
+    {
+     "article": "Main_Page",
+     "views": 9000000,
+     "rank": 1
+    },
+    {
+     "article": "Special:Search",
+     "views": 800000,
+     "rank": 2
+    },
+    {
+     "article": "Merlin_Bird_ID_(app)",
+     "views": 12000,
+     "rank": 3
+    },
+    {
+     "article": "Chiefs",
+     "views": 9000,
+     "rank": 4
+    },
+    {
+     "article": "Bird_feeder_(device)",
+     "views": 2000,
+     "rank": 5
+    },
+    {
+     "article": "Bird_migration",
+     "views": 40,
+     "rank": 6
+    }
+   ]
+  }
+ ]
+}

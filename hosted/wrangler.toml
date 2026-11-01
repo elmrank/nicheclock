@@ -1,0 +1,51 @@
+# nicheclock hosted API + remote MCP.
+# Placeholders only: no account id, token or secret lives in this file.
+# `wrangler dev --local` runs fully offline against local D1/R2 (see README.md).
+name = "nicheclock-hosted"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+# Production domain. Needs the elmrank.com zone on the same Cloudflare account.
+routes = [{ pattern = "nicheclock.elmrank.com", custom_domain = true }]
+
+[observability]
+enabled = true
+
+[vars]
+PUBLIC_BASE_URL = "https://nicheclock.elmrank.com"
+DAILY_LIMIT = "1000"          # requests/day/key (UTC day)
+MINUTE_LIMIT = "60"           # requests/minute/key
+MAX_CUSTOM_NICHES = "3"       # per key
+MAX_KEYS_PER_EMAIL = "2"      # active keys per verified email
+JOBS_DAILY_CAP = "20"         # new custom-niche jobs per UTC day, whole service
+SITE_GATE = "on"               # "off" removes the Basic login from the static site
+KEY_SIGNUP = "off"             # "on" opens /keys + GitHub sign-in. Off at launch: no cost cap for the hosted API yet, /v1 and /mcp stay 401 without a key
+ALLOWED_ORIGINS = ""          # extra browser Origins allowed on /mcp (comma list); own origin is always allowed
+
+# D1: `wrangler d1 create nicheclock`, then paste the id here (not secret, but account specific).
+# The route and PUBLIC_BASE_URL above belong to the reference deployment: change both for your own domain.
+[[d1_databases]]
+binding = "DB"
+database_name = "nicheclock"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+migrations_dir = "migrations"
+
+# R2: `wrangler r2 bucket create nicheclock-data`
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "nicheclock-data"
+
+# Secrets (never in this file): wrangler secret put GITHUB_CLIENT_ID | GITHUB_CLIENT_SECRET | SESSION_SECRET
+# Local dev: copy .dev.vars.example to .dev.vars.
+
+# Landing + docs: static files built by site/build.py (`--home trending`). The Worker runs first for every path: dynamic
+# paths are handled in src/index.ts, everything else goes through the Basic-auth gate (src/gate.ts, secrets BASIC_USER and BASIC_PASSWORD;
+# set SITE_GATE = "off" to open the site) and then env.ASSETS.
+# X-Robots-Tag is set by src/index.ts on every response (index, follow on "/" only) and by site/public/_headers.
+[assets]
+directory = "./site/public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+run_worker_first = true

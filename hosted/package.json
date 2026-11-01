@@ -1,0 +1,22 @@
+{
+  "name": "nicheclock-hosted",
+  "version": "0.1.0",
+  "private": true,
+  "description": "nicheclock hosted API + remote MCP (Cloudflare Worker, D1, R2)",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --persist-to .wrangler/state",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "site": "uv run -q --with markdown-it-py python site/build.py"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.11",
+    "@cloudflare/workers-types": "^5.20261031.1",
+    "typescript": "^5.6.0",
+    "vite": "^7.0.0",
+    "vitest": "^5.0.5",
+    "wrangler": "4.156.0"
+  }
+}

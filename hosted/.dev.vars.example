@@ -1,0 +1,4 @@
+# Copy to .dev.vars (git-ignored). Placeholders, not real credentials.
+GITHUB_CLIENT_ID=placeholder-client-id
+GITHUB_CLIENT_SECRET=placeholder-client-secret
+SESSION_SECRET=replace-with-32+-random-bytes-hex

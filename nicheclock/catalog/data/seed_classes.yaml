@@ -1,0 +1,31 @@
+# Seed classes for the category-seeded pool (nicheclock/catalog/seeds.py).
+#
+# A category is filled from its OWN pages, not only from whatever is on a Wikipedia top list: for each class below,
+# the direct instances (P31) with the most Wikipedia sitelinks are read from Wikidata, and their pageviews decide
+# what rises and what is steady. Classes, never single topics; 5 or 6 per category (check_symmetry), so no branch
+# is seeded deeper than another. "other" has none. Every QID was read against its English label on 2026-11-01.
+version: 1
+min_classes: 5
+max_classes: 6
+per_class_limit: 200            # instances kept per class (most sitelinks first)
+min_sitelinks: 12
+per_category_pool: 300          # members kept per category after merging its classes
+classes:
+  autos-vehicles: [Q3231690, Q786820, Q23866334, Q13629441, Q21546143, Q673687]
+  beauty-fashion: [Q1618899, Q1941779, Q55315112, Q131207, Q11460]
+  business-finance: [Q13479982, Q11691, Q22687, Q161726, Q223371, Q4201895]
+  climate: [Q8092, Q169950, Q7944, Q7692360, Q8068, Q215864]
+  entertainment: [Q5398426, Q202866, Q63952888, Q215380, Q482994, Q130371093]
+  food-drink: [Q746549, Q40050, Q18534542, Q10943, Q1751429, Q134768]
+  games: [Q7889, Q7058673, Q131436, Q8076, Q734698, Q61974339]
+  health: [Q12136, Q12140, Q18123741, Q930752, Q134808, Q169872]
+  hobbies-leisure: [Q47728, Q194195, Q968907, Q208165, Q34379]
+  jobs-education: [Q3918, Q28640, Q189533, Q3244907, Q3914, Q31725945]
+  law-government: [Q327333, Q41487, Q7755, Q131569, Q820655, Q484652]
+  pets-animals: [Q39367, Q43577, Q622852, Q1448518, Q38829]
+  politics: [Q7278, Q2285706, Q40231, Q12909644, Q35749]
+  science: [Q11344, Q6999, Q26529, Q3239681, Q634, Q24034552]
+  shopping: [Q3390477, Q2549179, Q18043413, Q581105, Q19723451]
+  sports: [Q12973014, Q623109, Q483110, Q349, Q476028, Q1194951]
+  technology: [Q7397, Q9143, Q620615, Q3220391, Q9135, Q166142]
+  travel-transportation: [Q46970, Q1248784, Q570116, Q46169, Q249556, Q9259]

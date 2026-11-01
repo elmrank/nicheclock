@@ -1,0 +1,44 @@
+# nicheclock, self-hosted.
+#   mkdir -p nicheclock-data && cp .env.example .env
+#   docker compose run --rm nicheclock init https://your-site.example ...   (once; writes nicheclock-data/nicheclock.yaml)
+#   docker compose up -d
+# Everything the container keeps lives in ./nicheclock-data: nicheclock.yaml, data/, out/, secrets/.
+# Back up that one directory. Reports: http://127.0.0.1:8080/
+services:
+  nicheclock:
+    image: nicheclock:latest
+    build: .
+    container_name: nicheclock
+    restart: unless-stopped
+    init: true
+    # Run as the owner of ./nicheclock-data on the host. Set NICHECLOCK_UID / NICHECLOCK_GID in .env if `id -u` is not 1000.
+    user: "${NICHECLOCK_UID:-1000}:${NICHECLOCK_GID:-1000}"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NICHECLOCK_INTERVAL_HOURS: "${NICHECLOCK_INTERVAL_HOURS:-24}"
+    volumes:
+      - ${NICHECLOCK_DIR:-./nicheclock-data}:/nicheclock
+    ports:
+      # Loopback only. Put a reverse proxy in front to share the reports (docs/docker.md).
+      - "127.0.0.1:${NICHECLOCK_HOST_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+
+  # Optional local model: docker compose --profile ollama up -d
+  # then: docker compose exec ollama ollama pull llama3.2
+  # and in nicheclock.yaml: llm: {provider: ollama, model: llama3.2, base_url: "http://ollama:11434"}
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  ollama:

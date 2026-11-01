@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:ht="https://trends.google.com/trending/rss" version="2.0">
+<channel><title>Daily Search Trends</title>
+<item><title>Chiefs vs Bills</title><ht:approx_traffic>500K+</ht:approx_traffic><pubDate>Fri, 30 Oct 2026 20:00:00 -0700</pubDate>
+<ht:news_item><ht:news_item_title>Game recap</ht:news_item_title><ht:news_item_url>https://news.example/a</ht:news_item_url><ht:news_item_source>Example</ht:news_item_source></ht:news_item></item>
+<item><title>Merlin Bird ID update</title><ht:approx_traffic>20K+</ht:approx_traffic><pubDate>Fri, 30 Oct 2026 18:00:00 -0700</pubDate>
+<ht:news_item><ht:news_item_title>Cornell Lab teases new bird watching app</ht:news_item_title><ht:news_item_url>https://news.example/b</ht:news_item_url><ht:news_item_source>Example</ht:news_item_source></ht:news_item></item>
+<item><title>bird feeder squirrel tips</title><ht:approx_traffic>200+</ht:approx_traffic><pubDate>Fri, 30 Oct 2026 12:00:00 -0700</pubDate></item>
+<item><title>Bird Feeder night</title><ht:approx_traffic>1,000+</ht:approx_traffic><pubDate>Fri, 30 Oct 2026 11:00:00 -0700</pubDate></item>
+</channel></rss>

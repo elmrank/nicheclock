@@ -1,0 +1,57 @@
+name: docs-smoke
+
+# Runs what the README and docs/ tell people to run, in clean environments:
+#   docs-checks      front matter, links, every YAML/JSON/bash snippet; no-model and fake-model runs on fixtures (offline)
+#   host-quickstart  pipx install from the checkout, init (example.com and the demo site), edit, run, serve, MCP list_tools
+#   docker           build the image, compose config, init, up, healthcheck, reports, MCP, proxy configs, derived image
+on:
+  push:
+    branches: [main, docs]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[test,gsc,mcp]'
+      - name: Docs tests
+        run: python -m pytest tests/test_docs.py -q
+      - name: No-model run and fake-model run on fixtures
+        run: bash tests/docs_smoke_model.sh
+
+  host-quickstart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: command -v pipx || python -m pip install pipx
+      - name: Quickstart commands against a clean install
+        run: bash tests/docs_smoke_host.sh
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install mcp
+      - name: Docker flow from docs/docker.md
+        run: bash tests/docs_smoke.sh

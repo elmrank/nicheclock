@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest a change or a new data source
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The task first, then why nicheclock does not cover it today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would change
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: For a new data source
+      description: A link to the terms page and the clause that allows automated use. A source without one is not added, see CONTRIBUTING.md.

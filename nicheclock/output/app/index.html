@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{title}}</title>
+{{head}}
+<link rel="stylesheet" href="{{css}}">
+<script src="{{js}}" defer></script>
+</head>
+<body>
+{{bar}}
+<main id="app" aria-live="polite" {{app_attrs}}>
+<p class="state">Loading data…</p>
+<noscript><p class="state">This page draws its tables with JavaScript. The data is plain JSON: {{data_link}}.</p></noscript>
+</main>
+<footer id="foot">{{foot}}</footer>
+{{data}}
+</body>
+</html>

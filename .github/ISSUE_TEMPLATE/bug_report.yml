@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work as the docs say
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove API keys, tokens, email addresses and private URLs from everything you paste.
+        Security problems go through the process in SECURITY.md, not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The command you ran, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `nicheclock doctor --offline`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Run log
+      description: The end of `nicheclock run` output, if the bug is in a run.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version and install method
+      placeholder: "0.1.0, pipx from a checkout / Docker"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Python version
+      placeholder: "Ubuntu 24.04, Python 3.12"
+    validations:
+      required: true

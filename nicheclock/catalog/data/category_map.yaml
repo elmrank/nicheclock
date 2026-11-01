@@ -1,0 +1,242 @@
+# Wikidata class rules -> level-1 category (ids from categories.json).
+#
+# How an entity is classified (nicheclock/catalog/categories.py):
+#   1. it has a "sport" statement (P641)                         -> sports
+#   2. it is a human (P31 = Q5): the classes of its occupations   -> `occupation_rules` (nearest wins)
+#   3. it is a taxon (P31 = Q16521): follow parent taxon (P171)   -> Animalia (Q729) = pets-animals, else science
+#   4. otherwise: walk "instance of" (P31) / "subclass of" (P279) of the entity, then P279 upward, at most
+#      `max_depth` steps, and take the rule whose class is NEAREST; ties go to the first category in `priority`
+#   5. nothing matched                                            -> other
+# `max_depth` on a rule: the very general classes (academic discipline, company, product...) only count when the
+# entity is this close to them, otherwise half of Wikidata is "a company" or "a scientist".
+# Rules are classes, never single topics: nobody lists topics by hand. Each category has between
+# `min_rules` and `max_rules` entries (checked at build time and in tests) so no branch is seeded deeper
+# than another; see check_symmetry in categories.py.
+#
+# Every QID was read against its English label on 2026-11-01 and still exists (`python -m nicheclock.catalog verify-map`);
+# `python -m nicheclock.catalog map` prints this file as a table with the live labels.
+version: 1
+max_depth: 6
+taxon_depth: 40
+min_rules: 3
+# Tie-break when two categories match at the same distance: specific before generic.
+priority: [sports, games, entertainment, politics, law-government, health, science, climate, food-drink,
+           autos-vehicles, technology, beauty-fashion, pets-animals, hobbies-leisure, jobs-education,
+           travel-transportation, shopping, business-finance]
+max_rules: 24
+
+# P641 (sport) present -> category
+property_rules:
+  P641: sports
+
+# Class of the entity itself (P31 then P279*).
+class_rules:
+  sports:
+    - {class: Q349}
+    - {class: Q13406554}
+    - {class: Q16510064}
+    - {class: Q4438121}
+    - {class: Q623109}
+    - {class: Q27020041}
+    - {class: Q1076486}
+    - {class: Q1079023}
+  entertainment:
+    - {class: Q11424}
+    - {class: Q5398426}
+    - {class: Q182415}
+    - {class: Q482994}
+    - {class: Q7366}
+    - {class: Q215380}
+    - {class: Q95074, max_depth: 3}
+    - {class: Q8274}
+    - {class: Q618779}
+    - {class: Q4504495}
+    - {class: Q132241}
+    - {class: Q1573906}
+    - {class: Q571}
+    - {class: Q24634210}
+  games:
+    - {class: Q7889}
+    - {class: Q7058673}
+    - {class: Q131436}
+    - {class: Q11410, max_depth: 2}
+    - {class: Q8076}
+    - {class: Q1137109}
+  technology:
+    - {class: Q7397}
+    - {class: Q9143}
+    - {class: Q68}
+    - {class: Q3966}
+    - {class: Q17517}
+    - {class: Q11660}
+    - {class: Q115305900}
+    - {class: Q35127}
+    - {class: Q3220391}
+    - {class: Q18388277}
+    - {class: Q1058914}
+  business-finance:
+    - {class: Q4830453, max_depth: 3}
+    - {class: Q783794, max_depth: 3}
+    - {class: Q891723}
+    - {class: Q13479982}
+    - {class: Q8142}
+    - {class: Q11691}
+  politics:
+    - {class: Q7278}
+    - {class: Q40231}
+    - {class: Q6256}
+    - {class: Q198}
+    - {class: Q350604}
+    - {class: Q2223653}
+  law-government:
+    - {class: Q7188}
+    - {class: Q327333}
+    - {class: Q820655}
+    - {class: Q49371}
+    - {class: Q686822}
+    - {class: Q131569}
+    - {class: Q41487}
+  health:
+    - {class: Q12136}
+    - {class: Q169872}
+    - {class: Q12140}
+    - {class: Q134808}
+    - {class: Q796194}
+    - {class: Q179661}
+    - {class: Q4936952}
+    - {class: Q3241045}
+  science:
+    - {class: Q11344}
+    - {class: Q6999}
+    - {class: Q11173}
+    - {class: Q11862829, max_depth: 1}
+    - {class: Q65943}
+    - {class: Q2133344}
+    - {class: Q40218}
+  climate:
+    - {class: Q8065}
+    - {class: Q7944}
+    - {class: Q8081}
+    - {class: Q79602}
+    - {class: Q169950}
+    - {class: Q43059}
+    - {class: Q215864}
+    - {class: Q7692360}
+    - {class: Q11663}
+    - {class: Q125928}
+  food-drink:
+    - {class: Q2095, max_depth: 4}
+    - {class: Q40050, max_depth: 4}
+    - {class: Q746549}
+    - {class: Q25403900}
+    - {class: Q154}
+    - {class: Q11707}
+  autos-vehicles:
+    - {class: Q1420}
+    - {class: Q42889, max_depth: 3}
+    - {class: Q786820}
+    - {class: Q3231690}
+  travel-transportation:
+    - {class: Q515}
+    - {class: Q486972, max_depth: 2}
+    - {class: Q1248784}
+    - {class: Q55488}
+    - {class: Q570116}
+    - {class: Q1200957}
+    - {class: Q46970}
+    - {class: Q27686}
+    - {class: Q46169}
+    - {class: Q56061, max_depth: 2}
+  jobs-education:
+    - {class: Q3918}
+    - {class: Q3914}
+    - {class: Q2385804}
+    - {class: Q28640, max_depth: 2}
+    - {class: Q12737077, max_depth: 1}
+    - {class: Q189533}
+  beauty-fashion:
+    - {class: Q11460}
+    - {class: Q131207}
+    - {class: Q1941779}
+  pets-animals:
+    - {class: Q39367}
+    - {class: Q43577}
+    - {class: Q38829}
+  hobbies-leisure:
+    - {class: Q47728}
+    - {class: Q184872}
+    - {class: Q968907}
+    - {class: Q194195}
+    - {class: Q22698}
+  shopping:
+    - {class: Q213441}
+    - {class: Q11315}
+    - {class: Q484847}
+    - {class: Q2424752, max_depth: 2}
+
+# For humans (P31 = Q5): classes of the occupations (P106), P279* upward.
+occupation_rules:
+  sports:
+    - {class: Q2066131}
+    - {class: Q41583}
+  entertainment:
+    - {class: Q33999}
+    - {class: Q639669}
+    - {class: Q177220}
+    - {class: Q2526255}
+    - {class: Q28389}
+    - {class: Q36834}
+    - {class: Q36180, max_depth: 2}
+    - {class: Q245068}
+  politics:
+    - {class: Q82955}
+    - {class: Q48352}
+    - {class: Q2285706}
+  law-government:
+    - {class: Q40348}
+    - {class: Q16533}
+  business-finance:
+    - {class: Q43845, max_depth: 2}
+    - {class: Q131524}
+    - {class: Q484876}
+  technology:
+    - {class: Q5482740}
+  science:
+    - {class: Q901, max_depth: 2}
+  health:
+    - {class: Q39631}
+  beauty-fashion:
+    - {class: Q3501317}
+    - {class: Q4610556}
+
+# Taxa (P31 = Q16521) whose parent-taxon chain (P171) reaches this class belong to pets-animals;
+# every other taxon is science.
+taxon_animal_class: Q729
+
+# Federal Register agency slug -> category (Upcoming events); unlisted agencies are law-government.
+agency_rules:
+  food-and-drug-administration: health
+  health-and-human-services-department: health
+  centers-for-disease-control-and-prevention: health
+  environmental-protection-agency: climate
+  national-oceanic-and-atmospheric-administration: climate
+  energy-department: climate
+  securities-and-exchange-commission: business-finance
+  commodity-futures-trading-commission: business-finance
+  treasury-department: business-finance
+  federal-reserve-system: business-finance
+  federal-communications-commission: technology
+  national-institute-of-standards-and-technology: technology
+  federal-aviation-administration: travel-transportation
+  transportation-department: travel-transportation
+  national-highway-traffic-safety-administration: autos-vehicles
+  agriculture-department: food-drink
+  education-department: jobs-education
+  labor-department: jobs-education
+  national-aeronautics-and-space-administration: science
+  national-science-foundation: science
+  fish-and-wildlife-service: pets-animals
+  consumer-product-safety-commission: shopping
+  federal-trade-commission: shopping
+  state-department: politics
+  federal-election-commission: politics

@@ -1,0 +1,784 @@
+{
+ "schema": 1,
+ "sample": true,
+ "date": "2026-11-01",
+ "generated_at": "2026-11-01T06:00Z",
+ "note": "SAMPLE FIXTURE. Topics are real neutral subjects; every number is invented to exercise the page. Not data.",
+ "categories": [
+  {
+   "id": "autos",
+   "label": "Autos and Vehicles",
+   "topics": 3,
+   "events": 0
+  },
+  {
+   "id": "beauty",
+   "label": "Beauty and Fashion",
+   "topics": 2,
+   "events": 0
+  },
+  {
+   "id": "business",
+   "label": "Business and Finance",
+   "topics": 2,
+   "events": 0
+  },
+  {
+   "id": "climate",
+   "label": "Climate",
+   "topics": 4,
+   "events": 1
+  },
+  {
+   "id": "entertainment",
+   "label": "Entertainment",
+   "topics": 2,
+   "events": 0
+  },
+  {
+   "id": "food",
+   "label": "Food and Drink",
+   "topics": 6,
+   "events": 2
+  },
+  {
+   "id": "games",
+   "label": "Games",
+   "topics": 3,
+   "events": 0
+  },
+  {
+   "id": "health",
+   "label": "Health",
+   "topics": 2,
+   "events": 1
+  },
+  {
+   "id": "hobbies",
+   "label": "Hobbies and Leisure",
+   "topics": 5,
+   "events": 2
+  },
+  {
+   "id": "jobs",
+   "label": "Jobs and Education",
+   "topics": 2,
+   "events": 0
+  },
+  {
+   "id": "law",
+   "label": "Law and Government",
+   "topics": 4,
+   "events": 3
+  },
+  {
+   "id": "other",
+   "label": "Other",
+   "topics": 0,
+   "events": 0
+  },
+  {
+   "id": "pets",
+   "label": "Pets and Animals",
+   "topics": 5,
+   "events": 0
+  },
+  {
+   "id": "politics",
+   "label": "Politics",
+   "topics": 1,
+   "events": 1
+  },
+  {
+   "id": "science",
+   "label": "Science",
+   "topics": 3,
+   "events": 2
+  },
+  {
+   "id": "shopping",
+   "label": "Shopping",
+   "topics": 3,
+   "events": 1
+  },
+  {
+   "id": "sports",
+   "label": "Sports",
+   "topics": 3,
+   "events": 2
+  },
+  {
+   "id": "technology",
+   "label": "Technology",
+   "topics": 4,
+   "events": 0
+  },
+  {
+   "id": "travel",
+   "label": "Travel and Transportation",
+   "topics": 2,
+   "events": 0
+  }
+ ],
+ "sources": [
+  {
+   "id": "youtube",
+   "label": "YouTube Data API v3",
+   "status": "used",
+   "license": "chart place and raw views only",
+   "url": "https://developers.google.com/youtube/v3",
+   "ok": true
+  },
+  {
+   "id": "reddit",
+   "label": "Reddit",
+   "status": "excluded",
+   "url": "https://www.reddit.com/",
+   "detail": "Commercial terms for the data API; not used."
+  },
+  {
+   "id": "serp",
+   "label": "Search result pages",
+   "status": "planned",
+   "url": "https://nicheclock.elmrank.com/docs/sources/",
+   "detail": "Only through a key the user brings (v3)."
+  },
+  {
+   "id": "wikipedia",
+   "label": "Wikipedia",
+   "license": "CC0 1.0",
+   "url": "https://dumps.wikimedia.org/other/pageviews/",
+   "ok": true
+  },
+  {
+   "id": "news",
+   "label": "News (GDELT)",
+   "license": "Free to use with credit to the GDELT Project",
+   "url": "https://www.gdeltproject.org/",
+   "ok": true
+  },
+  {
+   "id": "hn",
+   "label": "Hacker News",
+   "license": "Public API; counts and links only",
+   "url": "https://github.com/HackerNews/API",
+   "ok": true
+  },
+  {
+   "id": "federal_register",
+   "label": "Federal Register",
+   "license": "Public domain (US government work)",
+   "url": "https://www.federalregister.gov/developers/documentation/api/v1",
+   "ok": true
+  }
+ ],
+ "regions": [
+  {
+   "id": "global",
+   "label": "Worldwide",
+   "native_label": "Worldwide",
+   "rank": 0,
+   "limited": false,
+   "sources": [
+    "federal_register",
+    "hn",
+    "news",
+    "wikipedia",
+    "youtube"
+   ],
+   "source_status": {
+    "federal_register": {
+     "status": "ok",
+     "topics": 2
+    },
+    "hn": {
+     "status": "ok",
+     "topics": 11
+    },
+    "news": {
+     "status": "ok",
+     "topics": 29
+    },
+    "wikipedia": {
+     "status": "ok",
+     "topics": 55
+    },
+    "youtube": {
+     "status": "ok",
+     "topics": 7
+    }
+   },
+   "topics": 56,
+   "file": "trending.json"
+  },
+  {
+   "id": "US",
+   "label": "United States",
+   "native_label": "United States",
+   "rank": 1,
+   "limited": false,
+   "sources": [
+    "federal_register",
+    "hn",
+    "news",
+    "wikipedia",
+    "youtube"
+   ],
+   "source_status": {
+    "federal_register": {
+     "status": "ok",
+     "topics": 2
+    },
+    "hn": {
+     "status": "ok",
+     "topics": 11
+    },
+    "news": {
+     "status": "ok",
+     "topics": 26
+    },
+    "wikipedia": {
+     "status": "ok",
+     "topics": 52
+    },
+    "youtube": {
+     "status": "ok",
+     "topics": 7
+    }
+   },
+   "topics": 53,
+   "file": "trending-US.json"
+  },
+  {
+   "id": "GB",
+   "label": "United Kingdom",
+   "native_label": "United Kingdom",
+   "rank": 2,
+   "limited": true,
+   "sources": [
+    "wikipedia"
+   ],
+   "source_status": {
+    "wikipedia": {
+     "status": "limited",
+     "topics": 32
+    }
+   },
+   "topics": 32,
+   "file": "trending-GB.json",
+   "limited_note": "Only Wikipedia pageviews are read for this country so far."
+  },
+  {
+   "id": "IN",
+   "label": "India",
+   "native_label": "भारत",
+   "rank": 3,
+   "limited": true,
+   "sources": [
+    "wikipedia"
+   ],
+   "source_status": {
+    "wikipedia": {
+     "status": "limited",
+     "topics": 14
+    }
+   },
+   "topics": 14,
+   "file": "trending-IN.json",
+   "limited_note": "Only Wikipedia pageviews are read for this country so far."
+  }
+ ],
+ "coverage": {
+  "global": {
+   "autos": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "beauty": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "business": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "climate": {
+    "rising": 3,
+    "steady": 1,
+    "total": 4,
+    "limited": true
+   },
+   "entertainment": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "food": {
+    "rising": 6,
+    "steady": 0,
+    "total": 6,
+    "limited": true
+   },
+   "games": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "health": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "hobbies": {
+    "rising": 5,
+    "steady": 0,
+    "total": 5,
+    "limited": true
+   },
+   "jobs": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "law": {
+    "rising": 3,
+    "steady": 1,
+    "total": 4,
+    "limited": true
+   },
+   "other": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "pets": {
+    "rising": 4,
+    "steady": 1,
+    "total": 5,
+    "limited": true
+   },
+   "politics": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "science": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "shopping": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "sports": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "technology": {
+    "rising": 4,
+    "steady": 0,
+    "total": 4,
+    "limited": true
+   },
+   "travel": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   }
+  },
+  "US": {
+   "autos": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "beauty": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "business": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "climate": {
+    "rising": 3,
+    "steady": 1,
+    "total": 4,
+    "limited": true
+   },
+   "entertainment": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "food": {
+    "rising": 6,
+    "steady": 0,
+    "total": 6,
+    "limited": true
+   },
+   "games": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "health": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "hobbies": {
+    "rising": 4,
+    "steady": 0,
+    "total": 4,
+    "limited": true
+   },
+   "jobs": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "law": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "other": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "pets": {
+    "rising": 4,
+    "steady": 1,
+    "total": 5,
+    "limited": true
+   },
+   "politics": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "science": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "shopping": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "sports": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "technology": {
+    "rising": 4,
+    "steady": 0,
+    "total": 4,
+    "limited": true
+   },
+   "travel": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   }
+  },
+  "GB": {
+   "autos": {
+    "rising": 0,
+    "steady": 1,
+    "total": 1,
+    "limited": true
+   },
+   "beauty": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "business": {
+    "rising": 0,
+    "steady": 1,
+    "total": 1,
+    "limited": true
+   },
+   "climate": {
+    "rising": 0,
+    "steady": 1,
+    "total": 1,
+    "limited": true
+   },
+   "entertainment": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "food": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "games": {
+    "rising": 2,
+    "steady": 1,
+    "total": 3,
+    "limited": true
+   },
+   "health": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "hobbies": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "jobs": {
+    "rising": 0,
+    "steady": 1,
+    "total": 1,
+    "limited": true
+   },
+   "law": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "other": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "pets": {
+    "rising": 1,
+    "steady": 1,
+    "total": 2,
+    "limited": true
+   },
+   "politics": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "science": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "shopping": {
+    "rising": 0,
+    "steady": 1,
+    "total": 1,
+    "limited": true
+   },
+   "sports": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "technology": {
+    "rising": 4,
+    "steady": 0,
+    "total": 4,
+    "limited": true
+   },
+   "travel": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   }
+  },
+  "IN": {
+   "autos": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "beauty": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "business": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "climate": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "entertainment": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "food": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "games": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "health": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "hobbies": {
+    "rising": 2,
+    "steady": 0,
+    "total": 2,
+    "limited": true
+   },
+   "jobs": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "law": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "other": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "pets": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "politics": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "science": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "shopping": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   },
+   "sports": {
+    "rising": 1,
+    "steady": 0,
+    "total": 1,
+    "limited": true
+   },
+   "technology": {
+    "rising": 3,
+    "steady": 0,
+    "total": 3,
+    "limited": true
+   },
+   "travel": {
+    "rising": 0,
+    "steady": 0,
+    "total": 0,
+    "limited": true
+   }
+  }
+ },
+ "source_filter": [
+  {
+   "key": "youtube",
+   "label": "YouTube",
+   "family": "video"
+  },
+  {
+   "key": "wikipedia",
+   "label": "Wikipedia",
+   "family": "wiki"
+  },
+  {
+   "key": "news",
+   "label": "News",
+   "family": "news"
+  },
+  {
+   "key": "hn",
+   "label": "Hacker News",
+   "family": "community"
+  },
+  {
+   "key": "federal_register",
+   "label": "Federal Register",
+   "family": "government"
+  }
+ ]
+}

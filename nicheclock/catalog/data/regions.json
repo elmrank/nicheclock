@@ -1,0 +1,220 @@
+{
+  "population_source": {
+    "name": "UN World Population Prospects 2024 (medium variant)",
+    "url": "https://population.un.org/wpp/",
+    "file": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/WPP2024_TotalPopulationBySex.csv.gz",
+    "measure": "TPopulation1July (thousands x 1000), Time=2026, LocTypeName=Country/Area",
+    "retrieved": "2026-11-01",
+    "license": "CC BY 3.0 IGO",
+    "decision": "Ethiopia (138,902,185) is 10th and Mexico (132,997,658) 11th on 1 July 2026, so Ethiopia is in and Mexico is out. Japan is 12th (122,427,731)."
+  },
+  "regions": [
+    {
+      "id": "global",
+      "label": "Worldwide",
+      "native_label": null,
+      "iso2": null,
+      "fips": null,
+      "rank": 0,
+      "population_2026": null,
+      "languages": [],
+      "wikipedia": [
+        "en",
+        "es",
+        "hi",
+        "zh",
+        "id",
+        "ur",
+        "pt",
+        "bn",
+        "ru",
+        "am",
+        "ha",
+        "yo"
+      ],
+      "timezone": "UTC",
+      "youtube": null
+    },
+    {
+      "id": "IN",
+      "label": "India",
+      "native_label": "भारत",
+      "iso2": "IN",
+      "fips": "IN",
+      "rank": 1,
+      "population_2026": 1476625576,
+      "languages": [
+        "hi",
+        "en"
+      ],
+      "wikipedia": [
+        "hi"
+      ],
+      "timezone": "Asia/Kolkata",
+      "youtube": "IN"
+    },
+    {
+      "id": "CN",
+      "label": "China",
+      "native_label": "中国",
+      "iso2": "CN",
+      "fips": "CH",
+      "rank": 2,
+      "population_2026": 1412914089,
+      "languages": [
+        "zh"
+      ],
+      "wikipedia": [
+        "zh"
+      ],
+      "timezone": "Asia/Shanghai",
+      "youtube": null,
+      "note": "Wikipedia is blocked in mainland China and Wikimedia publishes no country data for it; YouTube is blocked; Baidu and Weibo terms do not allow this use. Only the Chinese-language Wikipedia (read worldwide) and GDELT articles mentioning places in China are used."
+    },
+    {
+      "id": "US",
+      "label": "United States",
+      "native_label": null,
+      "iso2": "US",
+      "fips": "US",
+      "rank": 3,
+      "population_2026": 349035494,
+      "languages": [
+        "en",
+        "es"
+      ],
+      "wikipedia": [
+        "es"
+      ],
+      "timezone": "America/New_York",
+      "youtube": "US"
+    },
+    {
+      "id": "ID",
+      "label": "Indonesia",
+      "native_label": "Indonesia",
+      "iso2": "ID",
+      "fips": "ID",
+      "rank": 4,
+      "population_2026": 287886782,
+      "languages": [
+        "id"
+      ],
+      "wikipedia": [
+        "id"
+      ],
+      "timezone": "Asia/Jakarta",
+      "youtube": "ID"
+    },
+    {
+      "id": "PK",
+      "label": "Pakistan",
+      "native_label": "پاکستان",
+      "iso2": "PK",
+      "fips": "PK",
+      "rank": 5,
+      "population_2026": 259299792,
+      "languages": [
+        "ur",
+        "en"
+      ],
+      "wikipedia": [
+        "ur"
+      ],
+      "timezone": "Asia/Karachi",
+      "youtube": "PK"
+    },
+    {
+      "id": "NG",
+      "label": "Nigeria",
+      "native_label": "Nigeria",
+      "iso2": "NG",
+      "fips": "NI",
+      "rank": 6,
+      "population_2026": 242431832,
+      "languages": [
+        "en",
+        "ha",
+        "yo",
+        "ig"
+      ],
+      "wikipedia": [
+        "ha",
+        "yo"
+      ],
+      "timezone": "Africa/Lagos",
+      "youtube": "NG"
+    },
+    {
+      "id": "BR",
+      "label": "Brazil",
+      "native_label": "Brasil",
+      "iso2": "BR",
+      "fips": "BR",
+      "rank": 7,
+      "population_2026": 213562666,
+      "languages": [
+        "pt"
+      ],
+      "wikipedia": [
+        "pt"
+      ],
+      "timezone": "America/Sao_Paulo",
+      "youtube": "BR"
+    },
+    {
+      "id": "BD",
+      "label": "Bangladesh",
+      "native_label": "বাংলাদেশ",
+      "iso2": "BD",
+      "fips": "BG",
+      "rank": 8,
+      "population_2026": 177818044,
+      "languages": [
+        "bn"
+      ],
+      "wikipedia": [
+        "bn"
+      ],
+      "timezone": "Asia/Dhaka",
+      "youtube": "BD"
+    },
+    {
+      "id": "RU",
+      "label": "Russia",
+      "native_label": "Россия",
+      "iso2": "RU",
+      "fips": "RS",
+      "rank": 9,
+      "population_2026": 143394458,
+      "languages": [
+        "ru"
+      ],
+      "wikipedia": [
+        "ru"
+      ],
+      "timezone": "Europe/Moscow",
+      "youtube": "RU",
+      "note": "Wikimedia publishes no country data for Russia; the Russian-language Wikipedia is read worldwide."
+    },
+    {
+      "id": "ET",
+      "label": "Ethiopia",
+      "native_label": "ኢትዮጵያ",
+      "iso2": "ET",
+      "fips": "ET",
+      "rank": 10,
+      "population_2026": 138902185,
+      "languages": [
+        "am",
+        "om",
+        "en"
+      ],
+      "wikipedia": [
+        "am"
+      ],
+      "timezone": "Africa/Addis_Ababa",
+      "youtube": "ET"
+    }
+  ]
+}

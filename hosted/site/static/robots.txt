@@ -1,0 +1,26 @@
+# Nothing is blocked except the API paths (they answer 401 without a key). Google has to be able to fetch every page to see its
+# noindex: exactly one URL is indexable (the homepage), every other page says noindex in a meta tag and in the X-Robots-Tag header.
+#
+# AI crawlers are welcome on the public pages. Each has its own group because a crawler follows only the most specific group that
+# names it, so the group repeats the Disallow lines of "*". Training and search are separate switches at every vendor:
+#   OpenAI GPTBot, OAI-SearchBot, ChatGPT-User; Anthropic ClaudeBot, Claude-SearchBot, Claude-User;
+#   Perplexity PerplexityBot, Perplexity-User; Google Google-Extended (Gemini; Googlebot itself is covered by "*").
+User-agent: *
+Allow: /
+Disallow: /v1/
+Disallow: /mcp
+
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+Allow: /
+Disallow: /v1/
+Disallow: /mcp
+
+Sitemap: https://nicheclock.elmrank.com/sitemap.xml

@@ -1,0 +1,12 @@
+# Cloudflare Workers static assets headers. The Worker (src/index.ts) runs first and sets X-Robots-Tag on every response:
+# "index, follow" for the homepage "/" only, noindex for the rest. The blanket noindex below is the fallback if an asset is
+# ever served without the Worker; it is never what makes "/" indexable.
+/*
+  X-Robots-Tag: noindex, nofollow
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

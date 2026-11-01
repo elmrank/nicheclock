@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nicheclock"
+version = "0.1.0"
+description = "Rising topics, dated events, and when to publish. A self-hosted trend radar with publish-by dates, Search Console gaps and a local MCP server."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
+dependencies = ["requests>=2.28", "pyyaml>=6"]
+
+[project.optional-dependencies]
+onboard = ["scikit-learn"]
+gsc = ["google-auth-oauthlib"]
+mcp = ["mcp"]
+catalog = ["holidays"]
+test = ["pytest", "aiosmtpd", "mcp", "google-auth-oauthlib", "holidays"]
+
+[project.scripts]
+nicheclock = "nicheclock.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["nicheclock*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.setuptools.package-data]
+nicheclock = ["onboard/data/*.json.gz", "onboard/data/*.json", "llm/prompts/*.md", "i18n/*.json", "output/app/*", "catalog/data/*.json", "catalog/data/*.yaml"]

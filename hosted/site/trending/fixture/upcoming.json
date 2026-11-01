@@ -1,0 +1,217 @@
+{
+ "schema": 1,
+ "sample": true,
+ "date": "2026-11-01",
+ "events": [
+  {
+   "title": "Daylight saving time ends (US)",
+   "date": "2026-11-01",
+   "publish_by": "2026-10-25",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "law",
+   "category_label": "Law and Government",
+   "region": "US",
+   "source": "holidays (Python library)",
+   "source_url": "https://pypi.org/project/holidays/",
+   "license": "MIT",
+   "regions": [
+    "US"
+   ]
+  },
+  {
+   "title": "Election Day (US midterm elections)",
+   "date": "2026-11-03",
+   "publish_by": "2026-10-27",
+   "lag_days": 7,
+   "kind": "government",
+   "category": "politics",
+   "category_label": "Politics",
+   "region": "US",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=2026+United+States+elections",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Guy Fawkes Night",
+   "date": "2026-11-05",
+   "publish_by": "2026-10-29",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "hobbies",
+   "category_label": "Hobbies and Leisure",
+   "region": "GB",
+   "source": "holidays (Python library)",
+   "source_url": "https://pypi.org/project/holidays/",
+   "license": "MIT",
+   "regions": [
+    "GB"
+   ]
+  },
+  {
+   "title": "Diwali",
+   "date": "2026-11-08",
+   "publish_by": "2026-11-01",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "hobbies",
+   "category_label": "Hobbies and Leisure",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Diwali",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Formula 1 São Paulo Grand Prix",
+   "date": "2026-11-08",
+   "publish_by": "2026-11-01",
+   "lag_days": 7,
+   "kind": "sports",
+   "category": "sports",
+   "category_label": "Sports",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=S%C3%A3o+Paulo+Grand+Prix",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Veterans Day",
+   "date": "2026-11-11",
+   "publish_by": "2026-11-04",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "law",
+   "category_label": "Law and Government",
+   "region": "US",
+   "source": "holidays (Python library)",
+   "source_url": "https://pypi.org/project/holidays/",
+   "license": "MIT",
+   "regions": [
+    "US"
+   ]
+  },
+  {
+   "title": "Remembrance Day",
+   "date": "2026-11-11",
+   "publish_by": "2026-11-04",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "law",
+   "category_label": "Law and Government",
+   "region": "GB",
+   "source": "holidays (Python library)",
+   "source_url": "https://pypi.org/project/holidays/",
+   "license": "MIT",
+   "regions": [
+    "GB"
+   ]
+  },
+  {
+   "title": "World Diabetes Day",
+   "date": "2026-11-14",
+   "publish_by": "2026-11-07",
+   "lag_days": 7,
+   "kind": "observance",
+   "category": "health",
+   "category_label": "Health",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=World+Diabetes+Day",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Leonids, peak night",
+   "date": "2026-11-17",
+   "publish_by": "2026-11-10",
+   "lag_days": 7,
+   "kind": "science",
+   "category": "science",
+   "category_label": "Science",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Leonids",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Beaujolais nouveau release",
+   "date": "2026-11-19",
+   "publish_by": "2026-11-12",
+   "lag_days": 7,
+   "kind": "observance",
+   "category": "food",
+   "category_label": "Food and Drink",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Beaujolais+nouveau",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Formula 1 Las Vegas Grand Prix",
+   "date": "2026-11-21",
+   "publish_by": "2026-11-14",
+   "lag_days": 7,
+   "kind": "sports",
+   "category": "sports",
+   "category_label": "Sports",
+   "region": "US",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Las+Vegas+Grand+Prix",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Thanksgiving (US)",
+   "date": "2026-11-26",
+   "publish_by": "2026-11-19",
+   "lag_days": 7,
+   "kind": "holiday",
+   "category": "food",
+   "category_label": "Food and Drink",
+   "region": "US",
+   "source": "holidays (Python library)",
+   "source_url": "https://pypi.org/project/holidays/",
+   "license": "MIT",
+   "regions": [
+    "US"
+   ]
+  },
+  {
+   "title": "Cyber Monday",
+   "date": "2026-11-30",
+   "publish_by": "2026-11-16",
+   "lag_days": 14,
+   "kind": "shopping",
+   "category": "shopping",
+   "category_label": "Shopping",
+   "region": "US",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Cyber+Monday",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Atlantic hurricane season ends",
+   "date": "2026-11-30",
+   "publish_by": "2026-11-23",
+   "lag_days": 7,
+   "kind": "observance",
+   "category": "climate",
+   "category_label": "Climate",
+   "region": "US",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=Atlantic+hurricane+season",
+   "license": "CC0 1.0"
+  },
+  {
+   "title": "Winter solstice",
+   "date": "2026-12-21",
+   "publish_by": "2026-12-14",
+   "lag_days": 7,
+   "kind": "science",
+   "category": "science",
+   "category_label": "Science",
+   "region": "global",
+   "source": "Wikidata",
+   "source_url": "https://www.wikidata.org/w/index.php?search=winter+solstice",
+   "license": "CC0 1.0"
+  }
+ ]
+}
