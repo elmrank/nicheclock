@@ -394,7 +394,7 @@ def main() -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render(page, names["site.css"], names["b.js"], docs), encoding="utf-8")
     if trending:
-        (out / "index.html").write_text(trending.index_html(trending_names, noindex="/" not in INDEXABLE, canonical=f"{SITE}/", beacon=names["b.js"], repo_note=source_note()), encoding="utf-8")
+        (out / "index.html").write_text(trending.index_html(trending_names, noindex="/" not in INDEXABLE, canonical=f"{SITE}/", beacon=names["b.js"], repo_note=source_note(), prerender=trending.prerender_html(out / "catalog-data")), encoding="utf-8")
         (out / "demo").mkdir()
         (out / "demo" / "index.html").write_text(home_page(app_names, "/demo/"), encoding="utf-8")
     else:

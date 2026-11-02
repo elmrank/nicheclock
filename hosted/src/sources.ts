@@ -12,7 +12,7 @@ export const PUBLIC_SOURCES: readonly string[] = [
   "gdelt", //              GDELT DOC 2.0, must cite
   "hn", //                 Hacker News (Firebase / Algolia)
   "federal_register", //   US government works, 17 U.S.C. 105
-  "github", //             official GitHub REST API, read-only (public repo metadata) + aggregate star/fork counts of public events (GH Archive); ledger: nicheclock/catalog/data/sources.json
+  "github", //             official GitHub REST API, read-only (public repo metadata + daily star/fork snapshots); ledger: nicheclock/catalog/data/sources.json
 ];
 
 /**

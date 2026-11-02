@@ -284,7 +284,7 @@ def test_meta_counts_regions_sources_and_symmetry():
     assert src["nager"]["status"] == "excluded" and "sponsorship" in src["nager"]["terms_quote"]
     assert src["wikimedia_country"]["ok"] is True and src["hn"]["ok"] is True and src["wikidata"]["ok"] is True
     assert src["github"]["status"] == "used" and src["mastodon"]["status"] == "planned"
-    assert [f["key"] for f in m["source_filter"]] == [f["key"] for f in SOURCE_FILTER] == ["wikipedia", "news", "hn", "youtube", "github", "gdacs", "tvmaze", "stackexchange", "pypi", "openlibrary"]
+    assert [f["key"] for f in m["source_filter"]] == [f["key"] for f in SOURCE_FILTER if not f.get("experimental")] == ["wikipedia", "news", "hn", "youtube", "github", "gdacs", "tvmaze", "stackexchange", "openlibrary"]
     assert m["symmetry"] == {"ok": True, "problems": []} and "never" in m["units"]["note"]
     assert m["population_source"]["decision"].startswith("Ethiopia")
 
@@ -514,14 +514,34 @@ def test_country_news_names_must_be_local_signals_not_world_news_that_mentions_a
     assert "Wire Agency" in newsmod.candidate_names(prev, end, region="WW")
 
 
-def test_github_case_variants_collapse_into_one_row():
-    from nicheclock.catalog import github as gh
+def test_experimental_mechanism_hides_sources_unless_enabled(monkeypatch):
+    import nicheclock.catalog.build as build
 
-    per = {o: {"Owner/Repo": [40, 1], "owner/repo": [3, 0]} for o in range(0, 30)}
-    s = {END - timedelta(days=o): {"day": "x", "hours": 24, "repos": r} for o, r in per.items()}
-    m = {"full_name": "Owner/Repo", "url": "https://github.com/Owner/Repo", "description": "d", "language": "Go", "topics": [], "stars": 9,
-         "forks": 1, "created_at": "2020-01-01", "archived": False, "fork": False}
-    rows = gh.build_rows(s, END, {"owner/repo": m, "Owner/Repo": m})
-    assert [r["repo"] for r in rows] == ["Owner/Repo"] and rows[0]["stars"]["daily"] == 40               # the exact spelling wins
-    ranks = [r["repo"] for r in gh.rank(rows, "daily")]
-    assert ranks == ["Owner/Repo"]
+    monkeypatch.setattr(build, "EXPERIMENTAL_IDS", ("github",))
+    monkeypatch.setattr(build, "SOURCE_FILTER", [dict(f, experimental=f["key"] == "github") for f in build.SOURCE_FILTER])
+    docs = {"global": {"date": "2026-10-30", "topics": []}}
+    rstat = {"global": {"wikipedia": {"status": "ok", "detail": "x", "topics": 0}}}
+    off = build.meta_doc(docs, None, rstat, {}, NOW)
+    src = {s["id"]: s for s in off["sources"]}
+    assert off["experimental"] is False and src["github"]["status"] == "experimental_off" and src["github"]["ok"] is None
+    assert "github" not in {f["key"] for f in off["source_filter"]}
+    on = build.meta_doc(docs, None, {"global": {"github": {"status": "ok", "detail": "174 repos", "topics": 3}}}, {}, NOW, experimental=True)
+    assert "github" in {f["key"] for f in on["source_filter"]} and {s["id"]: s for s in on["sources"]}["github"]["status"] == "used"
+
+
+def test_github_runs_on_the_rest_api_and_gh_archive_is_excluded_in_the_ledger():
+    from nicheclock.catalog import regions as rg
+    from nicheclock.catalog.feeds import EXPERIMENTAL
+
+    by = {e["id"]: e for e in rg.ledger()}
+    assert by["github"]["status"] == "used" and "REST" in by["github"]["label"] and by["gharchive"]["status"] == "excluded"
+    assert EXPERIMENTAL == ()
+
+
+def test_a_source_waiting_for_its_key_is_not_offered_as_a_filter():
+    from nicheclock.catalog.build import meta_doc
+
+    docs = {"global": {"date": "2026-10-30", "topics": []}}
+    m = meta_doc(docs, None, {"global": {"stackexchange": {"status": "pending_key", "detail": "no key", "topics": 0}}}, {}, NOW)
+    assert "stackexchange" not in {f["key"] for f in m["source_filter"]}
+    assert {s["id"]: s for s in m["sources"]}["stackexchange"]["status"] == "pending_key"

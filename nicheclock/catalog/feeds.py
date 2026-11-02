@@ -3,7 +3,6 @@
 * ``gdacs``         UN/EC Global Disaster Alert and Coordination System: current disaster events   -> Climate
 * ``tvmaze``        TVmaze schedule (CC BY-SA, attribution by link): shows airing today, by country -> Entertainment
 * ``stackexchange`` Stack Overflow hot questions: tag counts only (no question text)              -> Technology
-* ``pypi``          PyPI downloads (pypistats.org) of the most downloaded packages: a real ratio  -> Technology
 * ``openlibrary``   Open Library trending books (daily)                                          -> Hobbies and Leisure
 
 Rows are built here, not by ``assemble_topic``: these channels have no Wikipedia series. A row is "rising" only
@@ -23,30 +22,26 @@ from nicheclock.catalog.categories import category_label
 from nicheclock.catalog.scoring import RATIO_CAP, SCORE_SCALE, channel_windows, rank_score, window_stats
 from nicheclock.http import FetchError, RobotsDisallowed
 
+# Experimental: off by default until the owner has re-read the terms (CLI --experimental enables them).
+# Empty now: the GitHub rank runs on the official REST API, Stack Overflow tags wait for a key, PyPI was removed.
+EXPERIMENTAL: tuple[str, ...] = ()
 PER_SOURCE = 15                # rows kept per source and region
-# Sources whose terms were not confirmed as allowing automated use. The catalog build skips them unless the
-# operator names them in --experimental after reading each source's terms (see README, "Data sources").
-EXPERIMENTAL = ("stackexchange", "pypi", "gharchive")
 GDACS_URL = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP"
 TVMAZE_SCHEDULE = "https://api.tvmaze.com/schedule"
 TVMAZE_WEB = "https://api.tvmaze.com/schedule/web"
 SE_QUESTIONS = "https://api.stackexchange.com/2.3/questions"
-PYPI_TOP = "https://hugovk.github.io/top-pypi-packages/top-pypi-packages.min.json"
-PYPISTATS = "https://pypistats.org/api/packages/{pkg}/overall"
 OPENLIBRARY = "https://openlibrary.org/trending/daily.json"
 
 LICENSES = {
     "gdacs": "GDACS (UN/EC JRC); reuse of Commission documents under CC BY 4.0, source acknowledged",
     "tvmaze": "CC BY-SA (TVmaze API); attribution by link to tvmaze.com",
-    "stackexchange": "Stack Exchange API; tag names and counts only (content is CC BY-SA, not copied)",
-    "pypi": "PyPI download statistics (pypistats.org); package names and counts only",
+    "stackexchange": "Stack Exchange API (data: Stack Exchange Network); tag names, counts and links only, content is not copied",
     "openlibrary": "Open Library API; titles, authors and links only",
 }
 UNITS = {
     "gdacs": "alert level as reported by GDACS (Green, Orange, Red)",
     "tvmaze": "TVmaze popularity weight 0-100 (as reported)",
     "stackexchange": "hot questions carrying the tag (of the 100 hottest)",
-    "pypi": "downloads/day",
     "openlibrary": "rank on Open Library's daily trending list",
 }
 ISO3_TO_REGION = {"IND": "IN", "CHN": "CN", "USA": "US", "IDN": "ID", "PAK": "PK", "NGA": "NG", "BRA": "BR", "BGD": "BD",
@@ -151,55 +146,64 @@ def _tv_rows(rid: str, shows: dict[int, dict[str, Any]], end: str) -> list[dict[
 
 # -- Stack Exchange ---------------------------------------------------------------------------
 
-def stackexchange_rows(client: Any, end: str) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
-    """Tags of the 100 hottest Stack Overflow questions, counted. Only tag names and counts are kept."""
+SE_CREDIT = "Stack Exchange Network"
+SE_KEY_FILE = "~/.config/nicheclock/stackexchange.env"
+
+
+def stackexchange_key(env: dict[str, str] | None = None) -> str | None:
+    """The API key of the registered Stack Apps application: STACKEXCHANGE_KEY, else the one-line env file
+    ``~/.config/nicheclock/stackexchange.env`` (override: STACKEXCHANGE_KEY_FILE). Never printed."""
+    import os
+    from pathlib import Path
+
+    env = env if env is not None else os.environ
+    if env.get("STACKEXCHANGE_KEY"):
+        return env["STACKEXCHANGE_KEY"].strip()
+    path = Path(env.get("STACKEXCHANGE_KEY_FILE") or SE_KEY_FILE).expanduser()
     try:
-        data = client.get_json(SE_QUESTIONS, params={"order": "desc", "sort": "hot", "site": "stackoverflow", "pagesize": 100})
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("STACKEXCHANGE_KEY="):
+                return line.split("=", 1)[1].strip().strip("\"'") or None
+    except OSError:
+        return None
+    return None
+
+
+def stackexchange_rows(client: Any, end: str, key: str | None, cache: Any, now: float | None = None
+                       ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Tags of the 100 hottest Stack Overflow questions, counted. Four conditions of the terms are code here:
+    an API ``key`` (without one the source is off: ``pending_key``), the ``backoff`` field is obeyed (a response
+    that carries one blocks every request until it has passed, remembered in the cache between builds), the
+    "Stack Exchange Network" credit is on every row and its evidence, and only tag name + count + tag link are kept."""
+    import time
+
+    now = now if now is not None else time.time()
+    if not key:
+        return {}, {"status": "pending_key", "detail": "no STACKEXCHANGE_KEY (a Stack Apps application key is required by the terms)"}
+    found, until = cache.get("sebackoff", "until")
+    if found and until and now < until:
+        return {}, {"status": "no_data", "detail": f"backoff requested by the API: next request allowed in {int(until - now)} s"}
+    try:
+        data = client.get_json(SE_QUESTIONS, params={"order": "desc", "sort": "hot", "site": "stackoverflow", "pagesize": 100, "key": key})
     except (FetchError, RobotsDisallowed) as e:
-        return {}, {"status": "no_data", "detail": f"{type(e).__name__}: {str(e)[:80]}"}
+        return {}, {"status": "no_data", "detail": f"{type(e).__name__}: {str(e)[:80]}".replace(key, "***")}
+    if data.get("backoff"):
+        cache.put("sebackoff", "until", now + float(data["backoff"]))
+        cache.commit()
     n = Counter()
     for q in data.get("items", []):
         for t in q.get("tags", []):
             n[t] += 1
-    rows = [feed_row("stackexchange", "global", t, f"Tag on {c} of the 100 hottest Stack Overflow questions", "technology",
-                     f"https://stackoverflow.com/questions/tagged/{t}", end, {"value": float(c), "hot_questions": c}, volume=float(c))
-            for t, c in n.most_common(PER_SOURCE)]
-    return ({"global": rows} if rows else {}), {"status": "ok" if rows else "no_data", "detail": f"{len(data.get('items', []))} hot questions, {len(rows)} tags"}
-
-
-# -- PyPI -------------------------------------------------------------------------------------
-
-def pypi_rows(client: Any, end_day: date, end: str, top: int = 60) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
-    """The ``top`` most downloaded packages (hugovk/top-pypi-packages list) with their daily downloads from
-    pypistats.org: a real ratio against the 14-day median, so a package is rising only when it really is."""
-    try:
-        lst = client.get_json(PYPI_TOP)
-    except (FetchError, RobotsDisallowed) as e:
-        return {}, {"status": "no_data", "detail": f"{type(e).__name__}: {str(e)[:80]}"}
-    names = [r["project"] for r in lst.get("rows", [])[:top]]
     rows = []
-    for pkg in names:
-        try:
-            d = client.get_json(PYPISTATS.format(pkg=pkg), params={"mirrors": "false"}, min_interval=1.0)
-        except (FetchError, RobotsDisallowed):
-            continue
-        by_day = {x["date"]: x["downloads"] for x in d.get("data", []) if x.get("category") == "without_mirrors"}
-        days = sorted(by_day)[-29:]
-        if not days or date.fromisoformat(days[-1]) < end_day - timedelta(days=2):
-            continue
-        series = [float(by_day[x]) for x in days][:-1] if len(days) > 15 else []     # the last day is often partial
-        st = window_stats(series, 1) if series else None
-        if not st:
-            continue
-        rising = st["ratio"] >= 1.5
-        rows.append(feed_row("pypi", "global", pkg, f"Python package, {int(st['value']):,} downloads/day", "technology",
-                             f"https://pypi.org/project/{pkg}/", end,
-                             {"value": st["value"], "baseline": st["baseline"], "ratio": st["ratio"], "windows": channel_windows(series),
-                              "series": series[-14:]}, trend="rising" if rising else "steady", ratio=st["ratio"], volume=st["value"],
-                             windows=channel_windows(series)))
-    rows.sort(key=lambda r: (r["trend"] != "rising", -r["rank_score"], -(r["volume"] or 0)))
-    rows = rows[:PER_SOURCE]
-    return ({"global": rows} if rows else {}), {"status": "ok" if rows else "no_data", "detail": f"{len(names)} packages read, {len(rows)} rows"}
+    for t, c in n.most_common(PER_SOURCE):
+        r = feed_row("stackexchange", "global", t, f"Tag on {c} of the 100 hottest Stack Overflow questions (data: {SE_CREDIT})", "technology",
+                     f"https://stackoverflow.com/questions/tagged/{t}", end, {"value": float(c), "hot_questions": c, "credit": SE_CREDIT},
+                     volume=float(c))
+        r["credit"] = SE_CREDIT
+        r["evidence"][0]["credit"] = SE_CREDIT
+        rows.append(r)
+    return ({"global": rows} if rows else {}), {"status": "ok" if rows else "no_data",
+            "detail": f"{len(data.get('items', []))} hot questions, {len(rows)} tags" + (f"; backoff {data['backoff']} s noted" if data.get("backoff") else "")}
 
 
 # -- Open Library -----------------------------------------------------------------------------

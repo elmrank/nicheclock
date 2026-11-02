@@ -232,24 +232,24 @@
    "id": "gharchive",
    "label": "GH Archive (hourly stars and forks of public repos)",
    "family": "developer",
-   "status": "experimental",
+   "status": "excluded",
    "license": "public events; aggregate counts only",
    "url": "https://www.gharchive.org/",
    "terms_url": "https://github.com/igrigorik/gharchive.org#licenses",
    "terms_quote": "GH Archive is a project to record the public GitHub timeline, archive it, and make it easily accessible for further analysis. ... Note this repository does not contain the GH Archive dataset (event archives/data). The dataset includes material that may be subject to third party rights. (robots.txt: no Disallow; Cloudflare content-signal comment only)",
-   "decision": "Experimental, off by default: the catalog build skips this source unless it is named in --experimental. Read its terms before switching it on. When on, it is used with care: the hourly files are streamed and reduced to repo name -> stars and forks per day (WatchEvent/ForkEvent). No actor names, payloads or text are stored or published. The licence of the dataset is not stated, so only counts of public events (facts) leave the build. Re-read the terms before enabling it.",
+   "decision": "Excluded, code removed: the dataset states no licence and warns it may include third-party rights. The GitHub rank uses the official REST API only.",
    "unit": "stars/day"
   },
   {
    "id": "github",
-   "label": "GitHub REST API (repo description, language, topics, totals)",
+   "label": "GitHub REST API (public repository data, daily star snapshots)",
    "family": "developer",
    "status": "used",
    "license": "GitHub API terms",
    "url": "https://docs.github.com/en/rest",
    "terms_url": "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service",
    "terms_quote": "You may not use the API to download data or Content from GitHub for spamming purposes, including for the purposes of selling GitHub users' personal information, such as to recruiters, headhunters, and job boards. (GitHub Terms of Service, API Terms)",
-   "decision": "Used read-only with the operator's token (never printed) for public repository metadata only (name, description, language, topics, star/fork totals). The github.com/trending page itself is not fetched for the product (GitHub AUP).",
+   "decision": "Used read-only with the operator's token (never printed), rate limit respected (stops 150 requests before the hourly limit): public repository data only (stars, forks, created_at, language, topics, description). A window's stars are differences between our own daily snapshots, so the lists fill up day by day (null where a window is not known yet); a repo younger than a window counts all its stars in it. The github.com/trending page is not fetched. No GH Archive.",
    "unit": "stars/day"
   },
   {
@@ -280,24 +280,25 @@
    "id": "stackexchange",
    "label": "Stack Overflow hot questions (tags)",
    "family": "developer",
-   "status": "experimental",
+   "status": "pending_key",
    "license": "Stack Exchange API; content CC BY-SA, not copied",
    "url": "https://api.stackexchange.com/docs",
    "terms_url": "https://api.stackexchange.com/docs",
-   "terms_quote": "(c) Stack Exchange, Inc; user contributions licensed under CC BY-SA (footer of https://api.stackexchange.com/docs). Quota: by default 10,000 requests a day for an application with a key, far fewer without one (https://api.stackexchange.com/docs/throttle). The Terms of Use page itself answered 403 to a script, so it was not read.",
-   "decision": "Experimental, off by default: the catalog build skips this source unless it is named in --experimental. Read its terms before switching it on. When on, it is used with care: one request a day for the 100 hottest questions; only the tag names, their counts and a link to the tag page are kept, never question text. Re-read the terms before enabling it (the API Terms of Use were not readable by script).",
-   "unit": "hot questions with the tag"
+   "terms_quote": "(c) Stack Exchange, Inc; user contributions licensed under CC BY-SA (footer of https://api.stackexchange.com/docs). The API terms require a visible statement that the Stack Exchange Network is the source, an application key (request quota: 10,000 a day with a key; keyless requests share one small quota per IP, https://api.stackexchange.com/docs/throttle) and obeying the `backoff` field of a response.",
+   "decision": "Enabled in code, OFF until a key exists: needs a Stack Apps application registration with an account (to be done by the owner), then STACKEXCHANGE_KEY in the environment or ~/.config/nicheclock/stackexchange.env. When on: one request a day, `backoff` obeyed (and remembered between builds), 'Stack Exchange Network' credit on every row, its evidence and the Sources page; only tag name, count and tag link are kept.",
+   "unit": "hot questions with the tag",
+   "credit": "Stack Exchange Network"
   },
   {
    "id": "pypi",
    "label": "PyPI download counts (pypistats.org)",
    "family": "developer",
-   "status": "experimental",
-   "license": "download counts as published; names and counts only",
+   "status": "excluded",
+   "license": "no licensed top list without a paid BigQuery project",
    "url": "https://pypistats.org/api/",
    "terms_url": "https://pypistats.org/api/",
-   "terms_quote": "PyPI Stats provides a simple JSON API for retrieving aggregate download stats and time series for packages. ... All download data is updated once daily. Etiquette: If you plan on using the API to download historical data for every python package in the database, DON'T. This website runs on limited resources. IP-based rate limiting is imposed application-wide.",
-   "decision": "Experimental, off by default: the catalog build skips this source unless it is named in --experimental. Read its terms before switching it on. When on, it is used with care: the 60 most downloaded packages (hugovk/top-pypi-packages list, so nobody hand-picks packages), one request each per day, 1 s apart, nothing historical beyond the 28-day series the endpoint returns. No licence statement was found for the counts: only package names, counts and a link are kept. Re-read the terms before enabling it.",
+   "terms_quote": "pypistats.org: Download stats are sourced from the Python Software Foundation's publicly available download stats on Google BigQuery ... You are much better off extracting the data directly from the Google BigQuery pypi downloads tables. PyPI's own /stats/ lists the biggest packages by storage size, not by downloads. The top-by-downloads file (hugovk/top-pypi-packages) has no stated licence and is built from a third-party dataset.",
+   "decision": "Excluded, code removed: a top list of PyPI packages by downloads is only available from BigQuery (needs a billed Google Cloud project) or from files with no stated licence, and the catalog does not pick packages by hand. Re-add when a licensed list exists.",
    "unit": "downloads/day"
   },
   {
@@ -333,7 +334,7 @@
    "url": "https://github.com/npm/registry/blob/main/docs/download-counts.md",
    "terms_url": "https://github.com/npm/registry/blob/main/docs/download-counts.md",
    "terms_quote": "There is a public api that gives you download counts by package and time range. (npm registry docs). The docs state no licence for reuse, and there is no official list of the most downloaded packages.",
-   "decision": "Excluded for now: without an objective top list the packages would have to be chosen by hand, which the catalog does not do. PyPI covers the same need with a published top list.",
+   "decision": "Excluded for now: without an objective top list the packages would have to be chosen by hand, which the catalog does not do.",
    "unit": ""
   }
  ]

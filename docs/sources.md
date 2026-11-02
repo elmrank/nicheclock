@@ -1,6 +1,6 @@
 ---
 title: Sources and terms
-description: Every source nicheclock reads, the terms that allow it, the limits it follows, and how to switch each one off. Plus the sources it refuses to use.
+description: Every source nicheclock reads, the terms behind it, which sources are on or off on the website and why, and how to switch each one off.
 order: 8
 publish: true
 ---
@@ -48,6 +48,36 @@ A network error, a 429 or a robots.txt block is printed at the end of the run, t
 ## Sources nicheclock does not use
 
 Reddit, Product Hunt, GitHub Trending pages, Amazon, the internal endpoints of Google Trends, Chinese hot lists, and store pages, community sites and fan databases whose terms forbid automated collection. Their terms do not allow automated collection for this use, or they offer no sanctioned API for it. Some of them may be fine for your own use under your own terms; nicheclock will not ship them as defaults. You can still add your own feeds with `rss:`.
+
+## On the website: what is on, what is off, and why
+
+The website's catalog is a public product, so it reads a shorter list than the engine above. The state below is as of 1 November 2026. The reasons come from the terms pages we read that day; they are an engineer's reading of public terms, not legal advice, and terms change. The published `/catalog-data/meta.json` lists each source in use with its licence and the clause relied on.
+
+| Source | On the website | Reason |
+|---|---|---|
+| Wikimedia pageviews, Wikidata | On | Both are released under CC0. Wikimedia asks for an accurate User-Agent and obeying `Retry-After`. |
+| GDELT | On | Its datasets are free for unrestricted use with a citation to the GDELT Project. |
+| Hacker News | On | Read through the Algolia API; only title, link and points are kept. |
+| Public holidays (`holidays` package) | On | MIT licence, and dates are facts. It covers the same ten countries as the excluded Nager.Date API. |
+| Federal Register | On | US government work, read through its documented API, not by scraping. |
+| Stack Exchange (Stack Overflow tags) | Off until a key exists | The API terms say nothing against commercial use. They require a visible statement that the Stack Exchange Network is the source, an application key (keyless requests share one small quota per IP) and obeying the `backoff` field. The code is done: it reads `STACKEXCHANGE_KEY` from the environment or `~/.config/nicheclock/stackexchange.env`, makes one request a day, obeys and remembers `backoff`, puts "Stack Exchange Network" on every row and its evidence, and keeps only the tag name, its count and the tag link. It stays off until the key is registered on Stack Apps. |
+| PyPI download counts | Excluded | A list of packages ranked by downloads is only available from BigQuery (needs a billed Google Cloud project) or from files with no stated licence. PyPI's own statistics page ranks packages by size, not by downloads. The catalog does not pick packages by hand, so the code was removed. |
+| GitHub rank | On, official API only | Public repository data (stars, forks, created date, language, topics) from the GitHub REST API with a read-only token and the rate limit respected; the github.com/trending page is not fetched. The star history endpoint is not available, so each window is the difference between our own daily snapshots: a window we cannot know yet is empty, never zero, and a repo younger than a window counts all its stars in it. The lists fill up day by day. |
+| GH Archive | Excluded | The dataset states no licence and warns that it may include third-party rights, so the GitHub rank does not use it. |
+| GDACS | On | A UN and European Commission service. Its pages are reused under the Commission's CC BY 4.0 reuse policy with the source named, and GDACS says its alerts are indicative. Only the event name, type, alert level, country, date and link are kept. |
+| TVmaze | On | The API is licensed CC BY-SA and attribution is a link back to TVmaze, which every row carries. Only the show name, network, popularity weight and link are kept. |
+| Open Library | On | Light use with an identifying User-Agent, one request a day for the daily trending list. Only title, authors and link are kept. |
+| npm download counts | Excluded | The registry docs state no licence for reuse and there is no official list of the most downloaded packages, so the packages would be picked by hand. |
+| CoinGecko | Excluded | The free plan has no commercial rights, and its support pages say attribution alone does not change that. Using it needs a paid plan. |
+| Nager.Date holidays | Excluded | Free for private or non-profit projects; commercial use needs sponsorship, and its terms do not allow using the holiday data to run a holiday portal. |
+| Apple chart feeds | Excluded | The feed generator is a tool of Apple's affiliate partner programme, and we found no public statement that lets a product redistribute chart data. The engine's `apple` source still works for your own reports; read the terms for your use before you publish anything built from it. |
+| TMDB, Spotify charts, Google Play, Google Trends internal endpoints, Baidu, Weibo | Excluded | A licence that needs a commercial agreement, terms that forbid reuse of charts or scraping, an endpoint that is not for automated use, or terms that do not clearly allow this use. |
+
+Off and excluded are different. A source that is off has terms that can be met and a named step left to do; an excluded source stays out unless its terms change or we pay for a plan that grants the rights.
+
+### YouTube
+
+YouTube's most popular videos chart is read through the official API, once per region per day. The API terms limit what a client may do with it: statistics may not be stored for more than 30 days, and API data may not be replaced with independently calculated data or used to make derived metrics. So the build keeps only presence on the chart and the view count exactly as YouTube reports it, computes no ratio or score from either, and keeps nothing between runs. The files are excluded from git, so no dated copies pile up in history, and they are not published on this site: the deploy refuses to ship them.
 
 ## What leaves your machine
 

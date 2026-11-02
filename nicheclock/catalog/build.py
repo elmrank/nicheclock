@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from nicheclock.catalog.categories import Classifier, category_ids, category_label, check_symmetry, load_categories, load_map
-from nicheclock.catalog.feeds import EXPERIMENTAL
 from nicheclock.catalog.resolver import Resolver
 from nicheclock.catalog.runtime import identity_from, make_runtime
 from nicheclock.catalog.upcoming import build_upcoming
@@ -32,28 +31,28 @@ SOURCE_FILTER = [
     {"key": "gdacs", "label": "GDACS disaster alerts", "family": "hazards"},
     {"key": "tvmaze", "label": "TVmaze (TV schedules)", "family": "tv"},
     {"key": "stackexchange", "label": "Stack Overflow", "family": "developer"},
-    {"key": "pypi", "label": "PyPI downloads", "family": "developer"},
     {"key": "openlibrary", "label": "Open Library", "family": "books"},
 ]
 
 
+EXPERIMENTAL_IDS: tuple[str, ...] = ()
+
+
 def _ledger_runtime(entry: dict[str, Any], rstat: dict[str, dict[str, dict[str, Any]]],
-                    ustat: dict[str, Any]) -> tuple[str, bool | None, str]:
+                    ustat: dict[str, Any], experimental: bool = False) -> tuple[str, bool | None, str]:
     """(status, ok, detail) of one ledger entry for this build."""
     sid = entry["id"]
     status = entry["status"]
+    if sid in EXPERIMENTAL_IDS and not experimental:
+        return "experimental_off", None, "Experimental source: off until its terms are re-read; no row of it is published."
     if status in ("excluded", "planned"):
         return status, None, entry["decision"]
     chan = {"wikimedia_pageviews": ("global", "wikipedia"), "hn": ("global", "hn"),
-            "github": ("global", "github"), "gharchive": ("global", "github"),
+            "github": ("global", "github"),
             "gdacs": ("global", "gdacs"), "tvmaze": ("global", "tvmaze"), "stackexchange": ("global", "stackexchange"),
-            "pypi": ("global", "pypi"), "openlibrary": ("global", "openlibrary")}.get(sid)
+            "openlibrary": ("global", "openlibrary")}.get(sid)
     if chan:
         s = rstat.get(chan[0], {}).get(chan[1])
-        if status == "experimental":              # reported as used only in a build where the operator switched it on
-            if not s or s["status"] == "disabled":
-                return status, None, "off by default (experimental source)"
-            status = "used"
         return status, (s["status"] == "ok") if s else None, s["detail"] if s else "not run"
     if sid in ("wikimedia_country", "gdelt", "youtube"):
         key = {"wikimedia_country": "wikipedia", "gdelt": "news", "youtube": "youtube"}[sid]
@@ -74,7 +73,7 @@ def _ledger_runtime(entry: dict[str, Any], rstat: dict[str, dict[str, dict[str, 
 
 
 def meta_doc(docs: dict[str, dict[str, Any]], upcoming: dict[str, Any] | None, rstat: dict[str, Any],
-             ustat: dict[str, Any], now: datetime) -> dict[str, Any]:
+             ustat: dict[str, Any], now: datetime, experimental: bool = False) -> dict[str, Any]:
     from nicheclock.catalog import regions as rg
 
     events = (upcoming or {}).get("events", [])
@@ -98,13 +97,15 @@ def meta_doc(docs: dict[str, dict[str, Any]], upcoming: dict[str, Any] | None, r
             "id": rid, "label": r["label"], "native_label": r["native_label"], "rank": r["rank"],
             "population_2026": r["population_2026"], "languages": r["languages"], "timezone": r["timezone"],
             "limited": limited, "limited_note": (wiki.get("detail") if limited else None),
-            "sources": have, "source_status": {k: {"status": v["status"], "detail": v["detail"], "topics": v.get("topics")} for k, v in st.items()},
+            "sources": have, "source_status": {k: {"status": v["status"], "detail": v["detail"], "topics": v.get("topics")} for k, v in st.items()
+                              if v.get("status") != "off"},
             "topics": len(doc["topics"]) if doc else 0, "date": doc["date"] if doc else None,
+            "filtered": doc.get("filtered") if doc else None,
             "categories_below_10": sum(1 for v in doc.get("coverage", {}).values() if v["limited"]) if doc else None,
             "file": rg.trending_file(rid)})
     sources = []
     for e in rg.ledger():
-        status, ok, detail = _ledger_runtime(e, rstat, ustat)
+        status, ok, detail = _ledger_runtime(e, rstat, ustat, experimental)
         sources.append({"id": e["id"], "label": e["label"], "family": e["family"], "status": status, "ok": ok,
                         "detail": detail, "license": e["license"], "url": e["url"], "terms_url": e["terms_url"],
                         "terms_quote": e["terms_quote"], "unit": e["unit"]})
@@ -119,8 +120,11 @@ def meta_doc(docs: dict[str, dict[str, Any]], upcoming: dict[str, Any] | None, r
                    "events": len(events), "categories_with_topics": sum(1 for c in cats if c["topics"]),
                    "categories_with_events": sum(1 for c in cats if c["events"]), "categories": len(cats),
                    "regions": len(regions_out), "topics_all_regions": sum(len(d["topics"]) for d in docs.values())},
+        "experimental": experimental,
         "categories": cats, "regions": regions_out,
-        "coverage": {rid: d["coverage"] for rid, d in docs.items() if "coverage" in d}, "sources": sources, "source_filter": SOURCE_FILTER,
+        "coverage": {rid: d["coverage"] for rid, d in docs.items() if "coverage" in d}, "sources": sources, "source_filter": [{k: v for k, v in f.items() if k != "experimental"} for f in SOURCE_FILTER
+                          if (experimental or not f.get("experimental"))
+                          and (rstat.get("global", {}).get(f["key"]) or {}).get("status") != "pending_key"],
         "symmetry": {"ok": not problems, "problems": problems},
         "partial": [r["id"] for r in regions_out if r["source_status"].get("build", {}).get("status") in ("skipped", "failed")],
         "units": {"wikipedia": "pageviews/day", "news": "articles/day (estimated)", "hn": "points",
@@ -159,7 +163,7 @@ def cmd_build(a: argparse.Namespace) -> int:
     if "trending" in a.only:
         print("trending:")
         docs, rstat, extra = build_all(rt, wd, resolver, classifier, today, wanted, max_seconds=a.max_minutes * 60 if a.max_minutes else None,
-                                  experimental=a.experimental)
+                                       experimental=a.experimental)
         from nicheclock.catalog.trending import split_youtube
 
         for rid in list(docs):
@@ -189,7 +193,7 @@ def cmd_build(a: argparse.Namespace) -> int:
     for r in old.get("regions", []):                     # regions not rebuilt this time keep their source status
         if r["id"] not in rstat:
             rstat[r["id"]] = {k: dict(v) for k, v in r["source_status"].items()}
-    meta = meta_doc(docs, upcoming, rstat, ustat, now)
+    meta = meta_doc(docs, upcoming, rstat, ustat, now, a.experimental)
     write_json(out / "meta.json", meta)
     (out / "COVERAGE.md").write_text(coverage_markdown(meta), encoding="utf-8")
     rt.cache.close()
@@ -292,9 +296,9 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--today", help="YYYY-MM-DD (default: today, UTC)")
     b.add_argument("--max-minutes", type=float, default=40, help="time budget for the trending build (0 = none); a region not started "
                    "in time is skipped and its previous file stays published, `partial` is set in meta.json")
+    b.add_argument("--experimental", action="store_true", help="also build the experimental sources (none right now: the GitHub rank runs on the "
+                   "official REST API, Stack Overflow tags wait for a key, PyPI was removed)")
     b.add_argument("--regions", nargs="+", help="region ids to build (default: all; e.g. global IN)")
-    b.add_argument("--experimental", nargs="+", choices=list(EXPERIMENTAL), default=[], metavar="SOURCE",
-                   help="switch on experimental sources (off by default; read each source's terms first): " + ", ".join(EXPERIMENTAL))
     r = sub.add_parser("resolve", help="text, QID or Wikipedia URL -> QID + category")
     r.add_argument("text")
     r.add_argument("--hint", choices=["person", "org"])

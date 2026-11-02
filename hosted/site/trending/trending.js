@@ -108,13 +108,13 @@
     if (!best) return { kind: "none", ratio: null, channel: null };
     return { kind: best.ratio < 1 ? "down" : "ratio", ratio: best.ratio, channel: best.channel };
   }
-  function riseText(info) { return info.kind === "new" ? "new (no baseline)" : info.kind === "none" ? "n/a" : pct(info.ratio); }
+  function riseText(info) { return info.kind === "new" ? "new (no baseline)" : info.kind === "none" ? "n/a" : pct(info.ratio) + (capped(info.ratio) ? " (" + factor(info.ratio) + ")" : ""); }
   /* a channel's own rise text for the chosen window; a channel with baseline 0 has no ratio */
   function chRiseText(c, w) {
     if (c.chart) return "none (chart place)";
     if (c.ratio_note || !(c.baseline > 0)) return typeof c.baseline === "number" ? "new (no baseline)" : "n/a";
     const r = chWinRatio(c, w);
-    return r === null ? "n/a" : (c.censored ? "\u2265 " : "") + pct(r) + (c.censored ? " lower bound" : "");
+    return r === null ? "n/a" : (c.censored ? "\u2265 " : "") + pct(r) + (capped(r) ? " (" + factor(r) + ")" : "") + (c.censored ? " lower bound" : "");
   }
   /* rows listed under "Trending now" that are not rising in the chosen window: steady / top rows and rows below their own baseline */
   function notRising(t, w) { return isSteady(t) || isFading(t) || riseInfo(t, w).kind === "down"; }
@@ -234,10 +234,14 @@
     if (a >= 1e3) return f(n / 1e3, "K");
     return String(Math.round(n));
   }
-  /* A ratio against the channel's own 14-day median. 10x and up is shown as the real factor (x112), never capped; below 1 is a fall. */
+  /* A ratio against the channel's own 14-day median, in one format like Google Trends: "+411%", capped at "+1,000%+" (11x and more);
+     the true multiple is always next to a capped figure (factor(), shown under the figure and in the tooltip). Below 1 is a fall. */
+  const CAP_RATIO = 11;
+  function capped(ratio) { return typeof ratio === "number" && isFinite(ratio) && ratio >= CAP_RATIO; }
+  function factor(ratio) { return "\u00D7" + (ratio >= 100 ? Math.round(ratio) : Math.round(ratio * 10) / 10).toLocaleString("en-US"); }
   function pct(ratio) {
     if (typeof ratio !== "number" || !isFinite(ratio)) return "n/a";
-    if (ratio >= 10) return "\u00D7" + (ratio >= 100 ? Math.round(ratio) : Math.round(ratio * 10) / 10).toLocaleString("en-US");
+    if (capped(ratio)) return "+1,000%+";
     if (ratio < 1) { const n = Math.round((1 - ratio) * 100); return n === 0 ? "0%" : "\u2212" + n + "%"; }
     return "+" + Math.round((ratio - 1) * 100).toLocaleString("en-US") + "%";
   }
@@ -307,7 +311,7 @@
   }
 
   if (typeof document === "undefined") {
-    module.exports = { riseInfo, riseText, chRiseText, chWinRatio, notRising, peakInfo, peakText, isFading, mergeYouTube, ghRows, ghLanguages, MIN_ROWS, isSteady, RISING, FOR_CHANNEL, channelRatio, forChannel, risingCount, leadChannel, applyFilters, sortTopics, categoryCounts, compact, pct, ago, since, unitShort, sparkLabel, parseHash, buildHash, DEFAULTS };
+    module.exports = { capped, factor, riseInfo, riseText, chRiseText, chWinRatio, notRising, peakInfo, peakText, isFading, mergeYouTube, ghRows, ghLanguages, MIN_ROWS, isSteady, RISING, FOR_CHANNEL, channelRatio, forChannel, risingCount, leadChannel, applyFilters, sortTopics, categoryCounts, compact, pct, ago, since, unitShort, sparkLabel, parseHash, buildHash, DEFAULTS };
     return;
   }
 
@@ -590,7 +594,8 @@
     if (ri.kind === "down") return h("td", { class: base + " steady", "data-label": lbl, title: "Below its own 14-day median in the " + state.window + " window, so not rising here. Another window may differ." }, [h("span", { class: "tri down fall", "aria-hidden": "true" }), pct(ri.ratio), h("span", { class: "via", text: chName(ri.channel, true) })]);
     if (ri.kind === "new") return h("td", { class: base, "data-label": lbl, title: "Rising, but the rising channel has no earlier history to compare with (zero articles before, or a Hacker News snapshot), so there is no ratio." }, [h("span", { class: "tri", "aria-hidden": "true" }), "new"]);
     if (ri.kind === "none") return h("td", { class: base + " steady", "data-label": lbl, title: "No channel with a baseline in this window." }, ["n/a"]);
-    return h("td", { class: base, "data-label": lbl, title: chName(ri.channel) + " in the " + state.window + " window against its own median of the 14 days before" + (t.rise === "mild" ? ". Mild rise: at least 1.2x" : "") }, [h("span", { class: "tri", "aria-hidden": "true" }), pct(ri.ratio), h("span", { class: "via", text: chName(ri.channel, true) })]);
+    const cap = capped(ri.ratio);
+    return h("td", { class: base, "data-label": lbl, title: chName(ri.channel) + " in the " + state.window + " window against its own median of the 14 days before" + (cap ? ": " + factor(ri.ratio) + " (the figure is capped at +1,000%+)" : "") + (t.rise === "mild" ? ". Mild rise: at least 1.2x" : "") }, [h("span", { class: "tri", "aria-hidden": "true" }), pct(ri.ratio), h("span", { class: "via", text: (cap ? factor(ri.ratio) + " \u00B7 " : "") + chName(ri.channel, true) })]);
   }
 
   function trendingTable(rows) {
@@ -616,7 +621,7 @@
     return h("table", { class: "trend" }, [
       h("thead", {}, [h("tr", {}, [
         th("Topic", "rank", "One row per topic, ordered by relevance: volume and rise together. Click a row for the trend breakdown."),
-        th("Rise (" + state.window + ")", "rise", "The window's value against the channel's own median of the 14 days before; the largest among the rising channels that have a baseline (the channel is named under the figure). 10x and more is shown as the real factor. Not search volume.", "num", "vs 14-day median"),
+        th("Rise (" + state.window + ")", "rise", "The window's value against the channel's own median of the 14 days before; the largest among the rising channels that have a baseline (the channel is named under the figure). Capped at +1,000%+ (11x and more); the real multiple is under the figure. Not search volume.", "num", "vs 14-day median"),
         th("Volume by channel", "volume", "Latest daily value per channel, each in its own unit. Channels are never added together. Sorting uses the Wikipedia or news value."),
         th("Trend", null, "Daily series of the channel rising fastest."),
         th("Sources", "sources", "Channels the topic appears on. A filled mark means that channel is rising (1.5x its baseline or more)."),
@@ -640,7 +645,7 @@
     return h("details", { class: "how" }, [
       h("summary", { text: "How to read the numbers" }),
       h("ul", {}, [
-        li("Rise.", "For the window you picked (24 h, 48 h or 7 d): the largest ratio among the rising channels that have a baseline, against that channel's own median of the 14 days before. The channel is named under the figure. 10x and more shows the real factor (x112 means 112 times). A channel with no earlier history (news at 0 articles before) shows \"new\", not a ratio. A fall shows with a minus sign and a down arrow, and the row moves below the rising ones. It is not search volume and there is none anywhere on this page."),
+        li("Rise.", "For the window you picked (24 h, 48 h or 7 d): the largest ratio among the rising channels that have a baseline, against that channel's own median of the 14 days before. The channel is named under the figure. The figure is capped at \"+1,000%+\" (11 times and more, like Google Trends) and the real multiple (x112 means 112 times) is written under it. A channel with no earlier history (news at 0 articles before) shows \"new\", not a ratio. A fall shows with a minus sign and a down arrow, and the row moves below the rising ones. It is not search volume and there is none anywhere on this page."),
         li("Fading.", "The last day is under half of the topic's 14-day peak. Rise still compares with the weeks before the spike, so a fading topic can show a large Rise."),
         li("Views/day.", "Wikipedia pageviews of the last full day, real readers only (no crawlers), on the wiki where the topic is biggest."),
         li("Articles/day est.", "Estimated: distinct news articles naming the topic in GDELT's 15-minute files, counted from 6 files a day and scaled to a full day."),
@@ -751,7 +756,7 @@
     });
     out.push(h("div", { class: "tablewrap" }, [h("table", { class: "trend github" }, [
       h("thead", {}, [h("tr", {}, [th("#", null, "Rank in this window"), th("Repository"), th("Language"),
-        th("Stars " + GH_WORD[win], null, "Public star events in the window, counted from GH Archive", "num"),
+        th("Stars " + GH_WORD[win], null, "Stars gained in the window: the difference between our daily snapshots of the star count from the GitHub API", "num"),
         th("Total stars", null, "All-time stars from the GitHub API", "num"), th("Forks " + GH_WORD[win], null, "Public fork events in the window", "num"), th("Last 14 days", null, "Stars per day")])]),
       h("tbody", {}, body)])]));
     out.push(h("p", { class: "dim small", text: gh.note || "" }));
@@ -778,7 +783,7 @@
   function tabs() {
     const n = (k, c) => h("button", { type: "button", role: "tab", class: "tab", "data-fk": "tab-" + k, "aria-selected": String(state.tab === k), onclick: () => setState({ tab: k, open: "" }, false) },
       [k === "trending" ? "Trending now" : k === "github" ? "GitHub rank" : "Upcoming", h("span", { class: "n", text: String(c) })]);
-    return h("div", { class: "tabs", role: "tablist", "aria-label": "Views" }, [n("trending", curTopics().length), n("upcoming", data.events.length)].concat(data.gh ? [n("github", (data.gh.repos || []).length)] : []));
+    return h("div", { class: "tabs", role: "tablist", "aria-label": "Views" }, [n("trending", curTopics().filter((t) => topicWindow(t, state.window)).length), n("upcoming", data.events.length)].concat(data.gh ? [n("github", (data.gh.repos || []).length)] : []));
   }
   function stamp() {
     const g = data.meta.generated_at || "";
@@ -841,8 +846,10 @@
       h("div", {}, [h("button", { type: "button", class: "btn", text: "Try again", onclick: load })])]));
   }
   function load() {
-    app.textContent = "";
-    app.appendChild(h("p", { class: "state", text: "Loading data\u2026" }));
+    if (!app.querySelector("#prerender")) {      // the served page carries a summary table: keep it on screen until the data arrives, then replace it
+      app.textContent = "";
+      app.appendChild(h("p", { class: "state", text: "Loading data\u2026" }));
+    }
     const get = (f) => fetch(base + f, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(f + " returned " + r.status); return r.json(); });
     const optional = (f) => get(f).catch(() => null);      // github-rank.json: absent in older builds, the tab is then hidden
     Promise.all([get("meta.json"), get("trending.json"), get("upcoming.json"), optional("github-rank.json"), ytFetch("youtube.json")]).then((r) => {

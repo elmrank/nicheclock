@@ -217,7 +217,7 @@ row: { repo, url, description, language, topics[], total_stars, total_forks, cre
        series[14] (stars/day), baseline, source, source_url, license }
 ```
 
-Stars and forks are counts of public WatchEvent / ForkEvent in GH Archive for the UTC days up to `date`; description,
-language, topics and totals come from the GitHub REST API. The MCP tool and REST route `github_rising(language?, window?, limit?)`
+Stars and forks are the difference between our own daily snapshots of the GitHub REST API counts, for the UTC days up to `date`
+(a window we cannot know yet is null, never 0); description, language, topics and totals come from the same API. The MCP tool and REST route `github_rising(language?, window?, limit?)`
 read this file. Worldwide rows of `trending.json` also carry the rising repos as Technology topics (`id` `gh:owner/name`, `qid` null,
 `channels.github` with unit `stars/day`).

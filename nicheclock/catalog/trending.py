@@ -23,6 +23,7 @@ from nicheclock.catalog import countrypv
 from nicheclock.catalog import feeds as feedmod
 from nicheclock.catalog import github as ghmod
 from nicheclock.catalog import hn as hnmod
+from nicheclock.catalog import junk as junkmod
 from nicheclock.catalog import news as newsmod
 from nicheclock.catalog import pageviews as pv
 from nicheclock.catalog import seeds as seedmod
@@ -73,8 +74,9 @@ class Ctx:
     seeds: dict[str, dict[str, Any]] = field(default_factory=dict)
     feeds: dict[str, dict[str, list[dict[str, Any]]]] = field(default_factory=dict)      # source -> region -> rows
     feed_status: dict[str, dict[str, Any]] = field(default_factory=dict)
-    experimental: frozenset[str] = frozenset()    # experimental sources the operator switched on (default: none)
     fetched: int = 0
+    tally: junkmod.Tally = field(default_factory=junkmod.Tally)      # what the junk filter removed in the region being built
+    experimental: bool = False               # enables the sources listed in feeds.EXPERIMENTAL
     deadline: float | None = None            # time.monotonic() value after which no new network work starts
 
     def out_of_time(self) -> bool:
@@ -392,6 +394,60 @@ def is_main_page(rec: dict[str, Any]) -> bool:
     return rec["id"] == "Q5296" or (rec.get("description") or "").lower().startswith("main page of a wikimedia")
 
 
+def class_ids(ctx: Ctx, rec: dict[str, Any]) -> list[str]:
+    """Instance-of and occupation ids of an entity plus their subclass ladder (3 steps), for the adult-class check."""
+    seeds = rec["claims"].get("P31", []) + rec["claims"].get("P106", [])
+    if not seeds:
+        return []
+    ctx.classifier._prefetch(seeds, "P279", 3)
+    return list(ctx.classifier._closure(seeds, "P279", 3))
+
+
+def drop_junk_candidates(ctx: Ctx, cands: dict[str, dict[str, Any]], recs: dict[str, Any]) -> None:
+    """Remove adult and utility topics from the candidates (before any series is fetched for them)."""
+    for q in list(cands):
+        rec, c = recs.get(q), cands[q]
+        if rec is None:
+            continue
+        titles = list((c.get("wiki") or {}).values()) and [v["title"] for v in c["wiki"].values()] or []
+        if c.get("country_title"):
+            titles.append(c["country_title"])
+        why = junkmod.utility_reason(rec["label"], titles)
+        kind = "utility"
+        if why is None:
+            kind = "adult"
+            why = junkmod.adult_reason(rec["label"], rec["description"], class_ids(ctx, rec))
+        if why is None and c.get("country_title"):
+            why = junkmod.adult_reason(c["country_title"], "", [])
+        if why:
+            ctx.tally.add(kind, rec["label"] or q, why)
+            del cands[q]
+
+
+def drop_bot_rows(ctx: Ctx, topics: list[dict[str, Any]], end: date, limit: int = 80) -> list[dict[str, Any]]:
+    """Drop rising rows whose traffic looks like bots (topviews heuristics: access skew over 90% in the last two
+    days, or a single-day spike). Only the ``limit`` best rising rows are checked: they are what the lists lead with."""
+    flagged: set[int] = set()
+    rising = sorted((i for i, t in enumerate(topics) if t["trend"] == "rising" and "wikipedia" in t["channels"]),
+                    key=lambda i: -topics[i]["rank_score"])[:limit]
+    for i in rising:
+        w = topics[i]["channels"]["wikipedia"]
+        ck = f"{w['wiki']}|{w['title']}|{end.isoformat()}"
+        found, hit = ctx.rt.cache.get("pvacc", ck)
+        if not found:
+            if ctx.out_of_time():
+                continue
+            hit = pv.access_split(ctx.rt.client, w["wiki"], w["title"], end)
+            if hit is not None:
+                ctx.rt.cache.put("pvacc", ck, [hit[0], hit[1]])
+        desktop, mobile = (hit[0], hit[1]) if hit else (None, None)
+        why = junkmod.bot_reason(desktop, mobile, w.get("series") or [])
+        if why:
+            ctx.tally.add("bot", topics[i]["label"], why)
+            flagged.add(i)
+    return [t for i, t in enumerate(topics) if i not in flagged]
+
+
 def _drop_non_topics(ctx: Ctx, cands: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     recs = ctx.wd.entities(list(cands))
     for q in list(cands):
@@ -465,6 +521,7 @@ def _finish(ctx: Ctx, region: dict[str, Any], cands: dict[str, dict[str, Any]], 
             topics.append(t)
     if rid == "global":
         topics += ctx.gh_topics                    # GitHub repos are Technology rows of the Worldwide list
+    topics = drop_bot_rows(ctx, topics, end)
     n_rising = sum(1 for t in topics if t["rise"] == "strong")
     topics = select_per_category(topics)
     ctx.log(f"  rows: {len(topics)} ({n_rising} strong risers found, {sum(1 for t in topics if t['trend'] == 'steady')} steady fill)")
@@ -571,6 +628,7 @@ def build_region(ctx: Ctx, region: dict[str, Any]) -> tuple[dict[str, Any], dict
     """(trending doc, {source key: {status, detail}}) for one region."""
     rid = region["id"]
     ctx.log(f"region {rid}")
+    ctx.tally = junkmod.Tally()
     st: dict[str, dict[str, Any]] = {}
     cands: dict[str, dict[str, Any]] = {}
     end = ctx.end
@@ -638,6 +696,7 @@ def build_region(ctx: Ctx, region: dict[str, Any]) -> tuple[dict[str, Any], dict
         _merge(cands, yc)
         st["youtube"] = yst
     recs = _drop_non_topics(ctx, cands)
+    drop_junk_candidates(ctx, cands, recs)
     ctx.log(f"  candidates: {len(cands)} entities")
     classes = ctx.classifier.classify_many([q for q in cands if "seed" not in cands[q]])
     for q, c in cands.items():
@@ -666,6 +725,10 @@ def build_region(ctx: Ctx, region: dict[str, Any]) -> tuple[dict[str, Any], dict
         if rows:
             topics += rows
             st[fkey] = {"status": "ok", "detail": ctx.feed_status[fkey]["detail"]}
+    if rid == "global":                          # a feed that is waiting for a key or failed is reported, not silent
+        for fkey, fs in ctx.feed_status.items():
+            if fs["status"] in ("pending_key", "no_data") and fkey not in st:
+                st[fkey] = {"status": fs["status"], "detail": fs["detail"], "topics": 0}
     if rid != "global":
         topics += fill_youtube(ctx, region, topics, end)
     for t in topics:
@@ -677,7 +740,8 @@ def build_region(ctx: Ctx, region: dict[str, Any]) -> tuple[dict[str, Any], dict
                            "pageviews/day (Wikipedia), estimated articles/day (GDELT), points (Hacker News). "
                            "Units are never mixed and none of them is search volume. A source with no data for "
                            "a region is absent from its rows."),
-           "coverage": coverage(topics), "topics": topics}
+           "filtered": ctx.tally.to_dict(), "coverage": coverage(topics), "topics": topics}
+    ctx.log(f"  junk filter removed {ctx.tally.to_dict()['total']}: {ctx.tally.to_dict()['removed']}")
     return doc, st
 
 
@@ -708,13 +772,11 @@ def fill_youtube(ctx: Ctx, region: dict[str, Any], topics: list[dict[str, Any]],
         if not videos:
             ctx.log(f"  youtube {cc} category {yid}: {detail}")
             continue
+        videos = [v for v in videos if not junkmod.adult_reason(v["title"], "", []) and not junkmod.utility_reason(v["title"], [])]
         for v in videos[:missing]:
             out.append(ytmod.video_row(v, cat, category_label(cat), region, end.isoformat(), yid))
         ctx.log(f"  youtube {cc} category {yid} -> {cat}: {min(missing, len(videos))} video rows")
     return out
-
-
-DISABLED = {"status": "disabled", "detail": "experimental source, off by default (enable with --experimental after reading its terms)"}
 
 
 def load_feeds(ctx: Ctx, today: date) -> None:
@@ -723,12 +785,11 @@ def load_feeds(ctx: Ctx, today: date) -> None:
     c = ctx.rt.client
     jobs = {"gdacs": lambda: feedmod.gdacs_rows(c, end),
             "tvmaze": lambda: feedmod.tvmaze_rows(c, today, ctx.regions, end),
-            "stackexchange": lambda: feedmod.stackexchange_rows(c, end),
-            "pypi": lambda: feedmod.pypi_rows(c, ctx.end, end),
+            "stackexchange": lambda: feedmod.stackexchange_rows(c, end, feedmod.stackexchange_key(), ctx.rt.cache),
             "openlibrary": lambda: feedmod.openlibrary_rows(c, end)}
     for key, job in jobs.items():
-        if key in feedmod.EXPERIMENTAL and key not in ctx.experimental:
-            ctx.feed_status[key] = DISABLED
+        if key in feedmod.EXPERIMENTAL and not ctx.experimental:
+            ctx.feed_status[key] = {"status": "off", "detail": "experimental source, off until its terms are re-read"}
             continue
         if ctx.out_of_time():
             ctx.feed_status[key] = {"status": "skipped", "detail": "time budget used"}
@@ -739,48 +800,47 @@ def load_feeds(ctx: Ctx, today: date) -> None:
             rows, status = {}, {"status": "no_data", "detail": f"{type(e).__name__}: {e}"}
         ctx.feeds[key] = rows
         ctx.feed_status[key] = status
+        if status["status"] == "pending_key":
+            continue
         ctx.log(f"feed {key}: {status['status']}: {status['detail']}")
 
 
 def build_github(ctx: Ctx, today: date) -> tuple[dict[str, Any] | None, dict[str, Any]]:
-    """(github-rank doc or None, status). Fills ``ctx.gh_topics``."""
-    if "gharchive" not in ctx.experimental:
-        return None, DISABLED
+    """(github-rank doc or None, status). Fills ``ctx.gh_topics``. Official REST API only: a daily snapshot of the
+    star/fork counts of the tracked repos, windows are differences between snapshots (see github.py)."""
     token = ghmod.load_token()
     if not token:
         return None, {"status": "pending_key", "detail": "no GITHUB_TOKEN and no `gh` login"}
-    end = ghmod.latest_complete_day(ctx.rt.client, today)
-    if end is None:
-        return None, {"status": "no_data", "detail": "GH Archive has no complete day yet"}
-    samples = ghmod.gather(ctx.rt.client, ctx.rt.state_dir, end)
-    if end not in samples:
-        return None, {"status": "no_data", "detail": "GH Archive day could not be read"}
-    totals = ghmod.window_totals(samples, end)
-    names = ghmod.pool(totals)
-    new = ghmod.search_new_repos(ctx.rt.client, token, end, ctx.rt.cache)
-    names = list(dict.fromkeys(names + [n for n in new if n in totals]))
-    meta = ghmod.fetch_meta(ctx.rt.client, token, names, ctx.rt.cache)
-    rows = ghmod.build_rows(samples, end, meta)
+    day = ctx.now.date()
+    snaps = ghmod.load_snapshots(ctx.rt.state_dir, day)
+    cands = ghmod.search_candidates(ctx.rt.client, token, day)
+    meta, complete = ghmod.refresh(ctx.rt.client, token, ghmod.tracked_names(snaps, day), cands)
+    if not meta:
+        return None, {"status": "no_data", "detail": "GitHub API returned no repositories (rate limit or error)"}
+    snaps[day] = {r: [m["stars"], m["forks"]] for r, m in meta.items()}
+    ghmod.save_snapshot(ctx.rt.state_dir, day, snaps[day])
+    rows = ghmod.build_rows(snaps, day, meta)
     now_iso = ctx.now.strftime("%Y-%m-%dT%H:%MZ")
-    doc = ghmod.rank_doc(rows, end, now_iso)
-    ctx.gh_topics = ghmod.trending_topics(rows, end, now_iso)
-    ctx.log(f"github: {len(samples)} archive days to {end}, {len(names)} repos looked up, {len(rows)} ranked, "
-            f"{len(ctx.gh_topics)} trending rows")
-    return doc, {"status": "ok", "detail": f"{len(rows)} repos ranked from GH Archive stars (days to {end}) + GitHub API metadata",
+    doc = ghmod.rank_doc(rows, day, now_iso, len(snaps))
+    ctx.gh_topics = ghmod.trending_topics(rows, day, now_iso)
+    ctx.log(f"github: {len(snaps)} snapshot day(s), {len(meta)} repos refreshed, {len(rows)} ranked, {len(ctx.gh_topics)} trending rows")
+    return doc, {"status": "ok" if complete else "limited",
+                 "detail": f"{len(rows)} repos ranked from daily REST snapshots ({len(snaps)} day(s) of history)" + ("" if complete else "; rate limit reached, partial refresh"),
                  "topics": len(ctx.gh_topics)}
 
 
 def build_all(rt: Any, wd: Wikidata, resolver: Resolver, classifier: Classifier, today: date,
               regions: list[dict[str, Any]], log: LOG = print, max_seconds: float | None = None,
-              experimental: Any = ()) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, dict[str, Any]]], dict[str, Any]]:
+              experimental: bool = False
+              ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, dict[str, Any]]], dict[str, Any]]:
     """({region id: trending doc}, {region id: {source key: status}}, {extra file name: doc})."""
     end = pv.latest_day(rt.client, today)
     if end is None:
         raise RuntimeError("Wikimedia pageviews not available")
     log(f"data day {end}")
     now = datetime.now(timezone.utc)
-    ctx = Ctx(rt, wd, resolver, classifier, end, now, log, regions, first_seen=_first_seen_load(rt.state_dir),
-              deadline=(time.monotonic() + max_seconds) if max_seconds else None, experimental=frozenset(experimental))
+    ctx = Ctx(rt, wd, resolver, classifier, end, now, log, regions, first_seen=_first_seen_load(rt.state_dir), experimental=experimental,
+              deadline=(time.monotonic() + max_seconds) if max_seconds else None)
     countries = [r for r in regions if r["id"] != "global"]
     fips = {r["fips"]: r["id"] for r in countries}
     try:
@@ -823,9 +883,6 @@ def build_all(rt: Any, wd: Wikidata, resolver: Resolver, classifier: Classifier,
             status[region["id"]] = {"build": {"status": "failed", "detail": f"{type(e).__name__}: {e}"}}
     if "global" in status:
         status["global"]["github"] = gh_status
-        for key, st in ctx.feed_status.items():
-            if st is DISABLED:
-                status["global"][key] = dict(st, topics=0)
     (rt.state_dir / "first_seen.json").write_text(json.dumps(ctx.first_seen))
     return docs, status, extra
 

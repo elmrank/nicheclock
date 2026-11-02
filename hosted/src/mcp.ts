@@ -93,7 +93,7 @@ const TOOLS = [
     description:
       "Repositories ranked by stars in a window: daily (last UTC day), weekly (7 days) or monthly (30 days), optionally for one " +
       "language. Each item has stars, forks, stars_per_day, total_stars, description, language, topics, a 14-day series and its " +
-      "source with source_url and license. Built from GH Archive star events and the GitHub API; not a copy of github.com/trending.",
+      "source with source_url and license. Built from daily snapshots of the GitHub REST API; not a copy of github.com/trending.",
     inputSchema: {
       type: "object",
       properties: {

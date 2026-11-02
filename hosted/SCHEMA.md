@@ -41,7 +41,7 @@ An item missing any of the three is dropped, never "repaired".
 | `gdelt` | everyone | free use, must cite (`attribution: GDELT Project`) | `gdelt` |
 | `hn` | everyone | Hacker News API | `hn` |
 | `federal_register` | everyone | US government work, 17 U.S.C. 105 | `federal_register` |
-| `github` | everyone | official GitHub REST API (read-only, public repo metadata) + aggregate star/fork counts of public events from GH Archive; terms quotes in `nicheclock/catalog/data/sources.json` | `catalog/github-rank.json`, catalog GitHub rows |
+| `github` | everyone | official GitHub REST API (read-only, public repo metadata) + our own daily star/fork snapshots; terms quotes in `nicheclock/catalog/data/sources.json` | `catalog/github-rank.json`, catalog GitHub rows |
 | `google_trends`, `apple` | `internal` and `admin` keys only | internal use, not redistribution | `google_trends`, `apple` (`--include-internal`) |
 | `nager` | `internal` and `admin` keys only | internal use, not redistribution | (not shipped in nicheclock; `--include-internal`) |
 

@@ -134,10 +134,10 @@ test("rise: one definition per window, real factor above 10x, falls shown as fal
     windows: { "24h": { ratio: 111.8 }, "48h": { ratio: 301.4 }, "7d": { ratio: 200.2 } } };
   const news = { value: 224, unit: "articles/day", baseline: 0, ratio: 224, windows: { "24h": { ratio: 224 }, "48h": { ratio: 1784 } } };
   const t = mk({ rising_channels: ["wikipedia", "news"], channels: { wikipedia: wiki, news }, series_end: "2026-10-31" });
-  assert.deepEqual([T.riseInfo(t, "24h").kind, T.riseInfo(t, "24h").channel, T.riseText(T.riseInfo(t, "24h"))], ["ratio", "wikipedia", "\u00D7112"]);   // news at baseline 0 never gives the row figure
-  assert.equal(T.riseText(T.riseInfo(t, "7d")), "\u00D7200");
+  assert.deepEqual([T.riseInfo(t, "24h").kind, T.riseInfo(t, "24h").channel, T.riseText(T.riseInfo(t, "24h"))], ["ratio", "wikipedia", "+1,000%+ (\u00D7112)"]);   // news at baseline 0 never gives the row figure
+  assert.equal(T.riseText(T.riseInfo(t, "7d")), "+1,000%+ (\u00D7200)");
   assert.equal(T.chRiseText(news, "24h"), "new (no baseline)");
-  assert.equal(T.chRiseText(wiki, "48h"), "\u00D7301");
+  assert.equal(T.chRiseText(wiki, "48h"), "+1,000%+ (\u00D7301)");
   const only = mk({ rising_channels: ["news"], channels: { wikipedia: { value: 90, baseline: 100, ratio: 0.9, windows: { "24h": { ratio: 0.9 } } }, news } });
   assert.equal(T.riseInfo(only, "24h").kind, "new");
   const down = mk({ rising_channels: ["wikipedia"], windows: { "24h": { ratio: 2 }, "7d": { ratio: 0.19 } }, channels: { wikipedia: { value: 19, baseline: 100, windows: { "24h": { ratio: 2 }, "7d": { ratio: 0.19 } } } } });
@@ -186,7 +186,7 @@ test("coverage: the catalog's meta.coverage equals what the page lists in 7d, fo
 });
 test("formatting", () => {
   assert.equal(T.compact(21000), "21K"); assert.equal(T.compact(1900), "1.9K"); assert.equal(T.compact(310), "310"); assert.equal(T.compact(1200000), "1.2M");
-  assert.equal(T.pct(7.59), "+659%"); assert.equal(T.pct(12), "\u00D712"); assert.equal(T.pct(10), "\u00D710"); assert.equal(T.pct(111.8), "\u00D7112"); assert.equal(T.pct(5089), "\u00D75,089"); assert.equal(T.pct(0.81), "\u221219%"); assert.equal(T.pct(0.999), "0%"); assert.equal(T.pct(9.9), "+890%"); assert.equal(T.pct(1.5), "+50%");
+  assert.equal(T.pct(7.59), "+659%"); assert.equal(T.pct(12), "+1,000%+"); assert.equal(T.pct(11), "+1,000%+"); assert.equal(T.pct(10.9), "+990%"); assert.equal(T.pct(5089), "+1,000%+"); assert.equal(T.factor(111.8), "\u00D7112"); assert.equal(T.factor(5089), "\u00D75,089"); assert.equal(T.factor(11.24), "\u00D711.2"); assert.equal(T.pct(0.81), "\u221219%"); assert.equal(T.pct(0.999), "0%"); assert.equal(T.pct(9.9), "+890%"); assert.equal(T.pct(1.5), "+50%");
   assert.equal(T.ago(3 * 3600000), "3 hours ago"); assert.equal(T.ago(49 * 3600000), "2 days ago");
 });
 test("sparkline text carries first, last, peak and unit", () => {

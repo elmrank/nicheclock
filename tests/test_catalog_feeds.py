@@ -3,7 +3,6 @@ import json
 from datetime import date
 
 from nicheclock.catalog import feeds, regions as rg
-from nicheclock.http import FetchError
 
 DAY = date(2026, 11, 1)
 END = "2026-10-31"
@@ -60,43 +59,56 @@ def test_tvmaze_ranks_shows_by_its_own_weight_per_country_and_unions_us_and_web_
     assert "CC BY-SA" in big["license"] and st["status"] == "ok"
 
 
-def test_stackexchange_keeps_only_tag_names_counts_and_links():
+class FakeCache:
+    def __init__(self):
+        self.d = {}
+
+    def get(self, ns, k, ttl=None):
+        return (True, self.d[(ns, k)]) if (ns, k) in self.d else (False, None)
+
+    def put(self, ns, k, v):
+        self.d[(ns, k)] = v
+
+    def commit(self):
+        pass
+
+
+def test_stackexchange_needs_a_key_credits_the_network_and_keeps_only_tag_name_count_link():
     items = [{"tags": ["python", "pandas"], "title": "SECRET QUESTION TEXT"}, {"tags": ["python"], "title": "x"}, {"tags": ["rust"]}]
-    out, st = feeds.stackexchange_rows(Client({"stackexchange.com": {"items": items}}), END)
+    c = Client({"stackexchange.com": {"items": items}})
+    out, st = feeds.stackexchange_rows(c, END, None, FakeCache())
+    assert out == {} and st["status"] == "pending_key" and c.calls == []                       # no key: no request at all
+    out, st = feeds.stackexchange_rows(c, END, "k3y", FakeCache())
     rows = out["global"]
+    assert c.calls[0][1]["key"] == "k3y" and c.calls[0][1]["site"] == "stackoverflow"
     assert [(r["label"], r["volume"]) for r in rows][:2] == [("python", 2.0), ("pandas", 1.0)]
     assert rows[0]["source_url"] == "https://stackoverflow.com/questions/tagged/python" and rows[0]["category"] == "technology"
-    assert "SECRET" not in json.dumps(rows) and st["status"] == "ok"
+    assert rows[0]["credit"] == "Stack Exchange Network" and rows[0]["evidence"][0]["credit"] == "Stack Exchange Network"
+    assert "Stack Exchange Network" in rows[0]["description"] and "SECRET" not in json.dumps(rows) and "k3y" not in json.dumps(rows)
+    assert st["status"] == "ok"
 
 
-def stats_payload(values, start=date(2026, 10, 3)):
-    from datetime import timedelta
+def test_stackexchange_obeys_backoff_between_builds_and_never_leaks_the_key():
+    from nicheclock.http import FetchError
 
-    return {"data": [{"category": "without_mirrors", "date": (start + timedelta(days=i)).isoformat(), "downloads": v} for i, v in enumerate(values)]
-            + [{"category": "with_mirrors", "date": start.isoformat(), "downloads": 1}]}
+    cache = FakeCache()
+    c = Client({"stackexchange.com": {"items": [{"tags": ["go"]}], "backoff": 30}})
+    out, st = feeds.stackexchange_rows(c, END, "k3y", cache, now=1000.0)
+    assert out["global"] and "backoff 30 s" in st["detail"] and cache.d[("sebackoff", "until")] == 1030.0
+    out, st = feeds.stackexchange_rows(c, END, "k3y", cache, now=1010.0)                        # still inside the backoff window
+    assert out == {} and st["status"] == "no_data" and "backoff" in st["detail"] and len(c.calls) == 1
+    out, st = feeds.stackexchange_rows(c, END, "k3y", cache, now=1031.0)
+    assert out["global"] and len(c.calls) == 2
+    bad = Client({"": FetchError("https://api.stackexchange.com/x?key=k3y: HTTP 400")})
+    assert "k3y" not in feeds.stackexchange_rows(bad, END, "k3y", FakeCache())[1]["detail"]
 
 
-def test_pypi_rows_have_a_real_ratio_and_only_rising_when_it_is():
-    top = {"rows": [{"project": "boom"}, {"project": "steady"}, {"project": "old"}]}
-
-    def route(url, params):
-        if "top-pypi" in url:
-            return top
-        assert params == {"mirrors": "false"}
-        if "boom" in url:
-            return stats_payload([1000] * 27 + [3000, 500])          # last (partial) day is ignored: 3000 vs 1000
-        if "steady" in url:
-            return stats_payload([5000] * 29)
-        return stats_payload([900] * 29, start=date(2026, 9, 1))      # stale series: skipped
-
-    c = Client({"": route})
-    out, st = feeds.pypi_rows(c, date(2026, 10, 31), END, top=3)
-    rows = out["global"]
-    assert [r["label"] for r in rows] == ["boom", "steady"]
-    assert (rows[0]["trend"], rows[0]["ratio"], rows[0]["rise"]) == ("rising", 3.0, "strong") and rows[0]["rank_score"] > 0
-    assert (rows[1]["trend"], rows[1]["ratio"], rows[1]["rank_score"]) == ("steady", 1.0, 0.0) and rows[1]["volume"] == 5000
-    assert all(kw.get("min_interval") == 1.0 for url, p, kw in c.calls if "pypistats" in url)       # gentle with a small site
-    assert rows[0]["channels"]["pypi"]["unit"] == "downloads/day" and rows[0]["windows"]["24h"]["active"]
+def test_stackexchange_key_comes_from_env_or_the_secrets_file(tmp_path):
+    f = tmp_path / "se.env"
+    f.write_text("STACKEXCHANGE_KEY=abc123\n")
+    assert feeds.stackexchange_key({"STACKEXCHANGE_KEY": " fromenv "}) == "fromenv"
+    assert feeds.stackexchange_key({"STACKEXCHANGE_KEY_FILE": str(f)}) == "abc123"
+    assert feeds.stackexchange_key({"STACKEXCHANGE_KEY_FILE": str(tmp_path / "missing")}) is None
 
 
 def test_openlibrary_rows_and_each_source_fails_alone():
@@ -107,8 +119,8 @@ def test_openlibrary_rows_and_each_source_fails_alone():
     r = out["global"][0]
     assert r["label"] == "Atomic Habits" and "James Clear" in r["description"] and r["source_url"] == "https://openlibrary.org/works/OL1W"
     assert r["category"] == "hobbies-leisure" and r["channels"]["openlibrary"]["rank"] == 1 and len(out["global"]) == 1
-    for fn in (lambda c: feeds.gdacs_rows(c, END), lambda c: feeds.stackexchange_rows(c, END), lambda c: feeds.openlibrary_rows(c, END),
-               lambda c: feeds.pypi_rows(c, DAY, END)):
+    for fn in (lambda c: feeds.gdacs_rows(c, END), lambda c: feeds.stackexchange_rows(c, END, "k", FakeCache()),
+               lambda c: feeds.openlibrary_rows(c, END)):
         rows, status = fn(Client({"": FetchError("boom")}))
         assert rows == {} and status["status"] == "no_data"
 
@@ -116,36 +128,8 @@ def test_openlibrary_rows_and_each_source_fails_alone():
 def test_ledger_has_terms_for_every_new_source_and_the_exclusions():
     by = {e["id"]: e for e in rg.ledger()}
     for k in ("gdacs", "tvmaze", "stackexchange", "pypi", "openlibrary"):
-        assert by[k]["status"] == ("experimental" if k in feeds.EXPERIMENTAL else "used") and by[k]["terms_url"].startswith("http") and len(by[k]["terms_quote"]) > 60, k
+        assert by[k]["status"] in ("used", "pending_key", "excluded") and by[k]["terms_url"].startswith("http") and len(by[k]["terms_quote"]) > 60, k
+    assert by["stackexchange"]["status"] == "pending_key" and by["stackexchange"]["credit"] == "Stack Exchange Network"
+    assert by["pypi"]["status"] == "excluded" and "BigQuery" in by["pypi"]["terms_quote"]
     assert by["coingecko"]["status"] == "excluded" and "commercial rights" in by["coingecko"]["terms_quote"]
     assert by["npm"]["status"] == "excluded" and "npm_pypi" not in by
-
-
-def test_experimental_sources_are_off_unless_named_and_the_ledger_says_so():
-    from types import SimpleNamespace
-
-    from nicheclock.catalog import trending as tr
-    from nicheclock.catalog.build import _ledger_runtime
-
-    assert set(feeds.EXPERIMENTAL) == {"stackexchange", "pypi", "gharchive"}
-    rt = SimpleNamespace(client=Client({"": FetchError("boom")}))
-    now = None
-
-    def ctx(on):
-        return tr.Ctx(rt, None, None, None, date(2026, 10, 31), now, lambda *_: None, [], experimental=frozenset(on))
-
-    off = ctx(())
-    tr.load_feeds(off, DAY)
-    assert off.feed_status["stackexchange"]["status"] == off.feed_status["pypi"]["status"] == "disabled"
-    assert off.feed_status["gdacs"]["status"] == "no_data"                 # a normal source was tried
-    assert tr.build_github(off, DAY) == (None, tr.DISABLED)
-    on = ctx(("pypi",))
-    tr.load_feeds(on, DAY)
-    assert on.feed_status["pypi"]["status"] == "no_data" and on.feed_status["stackexchange"]["status"] == "disabled"
-
-    by = {e["id"]: e for e in rg.ledger()}
-    off_stat = {"global": {"github": tr.DISABLED}}
-    for sid in feeds.EXPERIMENTAL:
-        assert _ledger_runtime(by[sid], off_stat, {}) == ("experimental", None, "off by default (experimental source)")
-    on_stat = {"global": {"github": {"status": "ok", "detail": "x"}, "pypi": {"status": "ok", "detail": "y"}}}
-    assert _ledger_runtime(by["gharchive"], on_stat, {})[0] == "used" and _ledger_runtime(by["pypi"], on_stat, {}) == ("used", True, "y")

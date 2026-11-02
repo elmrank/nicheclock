@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import html
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ CATALOG = SITE_DIR / "catalog-data"
 FIXTURE = HERE / "fixture"
 DATA_FILES = ("meta.json", "trending.json", "upcoming.json")
 
-# Copy: option C of docs/nicheclock-geo-plan-2026-11-01.md (Chief 01/11). It says only what is true today: MCP runs locally from the repository.
+# Copy: says only what is true today: MCP runs locally from the repository.
 TITLE = "nicheclock: rising topics and when to publish them"
 DESC = ("Rising topics from Wikipedia, news and community channels, upcoming events with a publish-by date, "
         "and a table that keeps each volume in its own unit.")
@@ -34,8 +35,8 @@ TAGLINE = "Rising topics, dated events, and when to publish."
 SUBLINE = ("nicheclock follows what is rising on Wikipedia, news and community channels and gives each upcoming event a publish-by date. "
            "The web table is for reading; AI agents get niche trends and events over MCP, which runs locally from the repository.")
 
-# Sources kept off the live site until their terms are re-read (Chief 01/11). Matched against a channel's key, its `source`, an
-# evidence item's `source` and the ids in meta.json. "github" is the stars/day channel and the GitHub rank tab, both counted from GH Archive.
+# Sources kept off the live site until their terms are re-read. Matched against a channel's key, its `source`, an
+# evidence item's `source` and the ids in meta.json. "github" is the stars/day channel and the GitHub rank tab.
 HIDDEN_SOURCES = frozenset({"stackexchange", "stack_exchange", "npm_pypi", "pypi", "npm", "gharchive", "github"})
 UNIT_NOTE = "Every volume has its own unit; none is search volume."
 
@@ -70,12 +71,27 @@ def _hidden_channel(key: str, ch: dict) -> bool:
     return key in HIDDEN_SOURCES or (isinstance(ch, dict) and ch.get("source") in HIDDEN_SOURCES)
 
 
+# Safety hotfix (01/11): topics never published on the site, whatever the catalog emits. Adult / NSFW and known bot-spike pages.
+# Matched on the lowercased label and on the Wikidata id. The catalog's own junk filter replaces most of this; keep the list short.
+BLOCKED_LABELS = {".xxx", "xxx", "pornhub", "xvideos", "xhamster", "onlyfans", "chaturbate", "stripchat", "xnxx", "redtube",
+                  "youporn", "brazzers", "pornography", "hentai", "main page"}
+BLOCKED_PATTERN = re.compile(r"(?<![\w.])(?:porn\w*|xxx|nsfw|hentai|onlyfans|sex (?:tape|video)s?)(?!\w)", re.I)
+BLOCKED_QIDS = {"Q5296"}  # Wikimedia main page
+
+
+def _blocked(t: dict) -> bool:
+    label = (t.get("label") or "").strip()
+    return label.lower() in BLOCKED_LABELS or bool(BLOCKED_PATTERN.search(label)) or t.get("qid") in BLOCKED_QIDS
+
+
 def public_topics(path: Path) -> str:
     """A trending*.json without the hidden sources: their channels and evidence are removed, a topic left with no channel is dropped,
     and a family no channel belongs to any more is dropped from `source_families`."""
     doc = json.loads(path.read_text(encoding="utf-8"))
     kept = []
     for t in doc.get("topics", []):
+        if _blocked(t):
+            continue
         chans = t.get("channels") or {}
         left = {k: c for k, c in chans.items() if not _hidden_channel(k, c)}
         if chans and not left:
@@ -124,14 +140,93 @@ def stage(out: Path, data: Path) -> dict[str, str]:
         elif f.name.startswith("trending") and f.suffix == ".json":
             (dest / f.name).write_text(public_topics(f), encoding="utf-8")
         elif f.name == "github-rank.json" and "gharchive" in HIDDEN_SOURCES:
-            continue       # stars and forks counted from GH Archive: the GitHub rank tab stays hidden with it
+            continue       # the GitHub rank tab stays hidden with the hidden sources
         else:
             shutil.copy(f, dest / f.name)
     return names
 
 
+PRERENDER_ROWS = 20
+PRERENDER_EVENTS = 10
+CAP_RATIO = 11            # same cap as trending.js: "+1,000%+" from 11x
+
+
+def _pct(ratio: float) -> str:
+    if ratio >= CAP_RATIO:
+        return "+1,000%+"
+    return f"+{round((ratio - 1) * 100):,}%" if ratio >= 1 else f"\u2212{round((1 - ratio) * 100)}%"
+
+
+def _compact(n: float) -> str:
+    a = abs(n)
+    for div, suffix in ((1e6, "M"), (1e3, "K")):
+        if a >= div:
+            v = n / div
+            return (f"{v:.0f}" if v >= 100 or v == int(v) else f"{v:.1f}".rstrip("0").rstrip(".")) + suffix
+    return str(round(n))
+
+
+def _unit(u: str) -> str:
+    if u.startswith("pageviews/day"):
+        return "views/day"
+    if u.startswith("HN points"):
+        return "points"
+    return (u.split(" (")[0] + (" est." if "estimated" in u else "")).strip()
+
+
+def _rise(t: dict, window: str = "7d") -> str | None:
+    """The row's Rise for one window, the same rule as trending.js riseInfo: the largest ratio among the rising channels that have a baseline."""
+    best = None
+    for k in t.get("rising_channels") or []:
+        c = (t.get("channels") or {}).get(k) or {}
+        w = (c.get("windows") or {}).get(window)
+        if c.get("baseline", 0) > 0 and w and isinstance(w.get("ratio"), (int, float)):
+            best = w["ratio"] if best is None else max(best, w["ratio"])
+    return None if best is None else _pct(best) + (f" (\u00D7{best:.0f})" if best >= CAP_RATIO else "")
+
+
+def prerender_html(public_data: Path, today: str | None = None) -> str:
+    """A real <table> of today's top Worldwide rising rows and the next dated events, from the PUBLISHED data files (so the hidden
+    sources are already gone), written into the static HTML for readers and crawlers that do not run JavaScript. trending.js
+    replaces the whole container once it has the data."""
+    import datetime as dt
+    e = html.escape
+    meta = json.loads((public_data / "meta.json").read_text(encoding="utf-8"))
+    topics = json.loads((public_data / "trending.json").read_text(encoding="utf-8")).get("topics", [])
+    events = json.loads((public_data / "upcoming.json").read_text(encoding="utf-8")).get("events", [])
+    label = {x.get("id"): x.get("label") for x in meta.get("sources", [])}
+    today = today or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    rows = []
+    for t in topics:                                    # the catalog file is already sorted by relevance
+        if t.get("trend") != "rising" or not (t.get("windows") or {}).get("7d"):
+            continue
+        rise = _rise(t)
+        if rise is None:
+            continue
+        vol = t.get("volume")
+        rows.append(f'<tr><th scope="row">{e(t["label"])}</th><td>{e(t.get("category_label") or t.get("category") or "")}</td>'
+                    f'<td>{e(rise)}</td><td>{e(_compact(vol) + " " + _unit(t.get("volume_unit") or "")) if isinstance(vol, (int, float)) else ""}</td></tr>')
+        if len(rows) == PRERENDER_ROWS:
+            break
+    ev = sorted((x for x in events if x.get("date", "") >= today and x.get("publish_by", "") >= today and x.get("kind") != "holiday"),
+                key=lambda x: (x["date"], x["title"]))[:PRERENDER_EVENTS]
+    day = meta.get("date") or (meta.get("generated_at") or "")[:10]
+    out = [f'<section id="prerender" aria-labelledby="pr-h"><h2 id="pr-h">Rising now, worldwide (data for {e(day)})</h2>',
+           f'<table class="trend pre"><caption>The top {len(rows)} rising topics today. Rise is the 7-day window against the topic\'s own median of the 14 days before, capped at +1,000%+. '
+           'Volume is the latest daily value in its own unit; none of it is search volume.</caption>'
+           '<thead><tr><th scope="col">Topic</th><th scope="col">Category</th><th scope="col">Rise (7d)</th><th scope="col">Volume</th></tr></thead>'
+           f'<tbody>{"".join(rows)}</tbody></table>']
+    if ev:
+        out.append('<h2>Upcoming events and when to publish</h2><table class="trend pre"><caption>The next dated events with a publish-by date (the event date minus a default lead time per kind of event).</caption>'
+                   '<thead><tr><th scope="col">Event</th><th scope="col">Date</th><th scope="col">Publish by</th><th scope="col">Source</th></tr></thead><tbody>'
+                   + "".join(f'<tr><th scope="row">{e(x["title"])}</th><td>{e(x["date"])}</td><td>{e(x["publish_by"])}</td><td>{e(label.get(x.get("source")) or x.get("source") or "")}</td></tr>' for x in ev)
+                   + "</tbody></table>")
+    out.append('<p class="dim small">This summary is the page as served; the full interactive table loads below it when JavaScript is available.</p></section>')
+    return "".join(out)
+
+
 def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "https://nicheclock.elmrank.com/",
-               beacon: str | None = None, repo_note: str = "Source code: coming soon.") -> str:
+               beacon: str | None = None, repo_note: str = "Source code: coming soon.", prerender: str = "") -> str:
     """The homepage. `noindex=False` makes it the one indexable URL. `beacon` is the hashed b.js name (first-party page counts)."""
     e = html.escape
     ld = json.dumps({
@@ -157,8 +252,9 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         f'<section class="hero"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p>'
         '<p class="dim small">MCP runs locally from the source repository, over stdio. There is no hosted API and no API key sign-up yet, '
         'and the Trending now table below is not available through MCP or an API yet.</p></section>\n'
-        f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-unit-note="{e(UNIT_NOTE)}">\n<p class="state">Loading data…</p>\n'
-        '<noscript><p class="state">This page draws its table with JavaScript. The data is plain JSON: <a href="/catalog-data/trending.json">/catalog-data/trending.json</a>.</p></noscript>\n</main>\n'
+        f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
+        + (prerender if prerender else '<p class="state">Loading data…</p>') + '\n'
+        '<noscript><p class="state">The interactive table needs JavaScript. The data is plain JSON: <a href="/catalog-data/trending.json">/catalog-data/trending.json</a>.</p></noscript>\n</main>\n'
         '<section class="about" id="about"><h2>What nicheclock is</h2>'
         '<p>nicheclock is a free trend radar under the AGPL-3.0 licence. It reads open data (Wikipedia pageviews, news counts from GDELT, Hacker News '
         'and dated event calendars) and lists the topics that are rising, each with the source, the licence and the unit it was measured in.</p>'

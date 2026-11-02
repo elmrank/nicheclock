@@ -85,6 +85,15 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
 .about h2 { font: 500 1.125rem var(--font-ui); color: var(--ink); margin-top: 1rem; }
 .about p { margin-top: 0.3rem; max-width: 46rem; }
 
+/* the summary table written into the served HTML (readable without JavaScript); trending.js replaces the whole container */
+#prerender { padding-top: 0.6rem; }
+#prerender h2 { font: 500 1.125rem var(--font-ui); margin-top: 0.8rem; }
+#prerender table { width: 100%; border-collapse: collapse; margin-top: 0.3rem; }
+#prerender caption { text-align: left; color: var(--ink2); font-size: 0.875rem; padding-bottom: 0.3rem; }
+#prerender th, #prerender td { text-align: left; padding: 0.3rem 0.6rem 0.3rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+#prerender thead th { font: 500 0.875rem var(--font-ui); }
+#prerender tbody th { font-weight: 500; }
+
 /* sample banner, tabs */
 .sample { margin-top: 0.6rem; padding: 0.3rem 0.6rem; background: var(--tint); border-radius: 8px; }
 .tabs { display: flex; gap: 0 1.6rem; margin-top: 0.4rem; border-bottom: 1px solid var(--rule); }

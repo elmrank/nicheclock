@@ -121,3 +121,27 @@ def featured(client: Any, lang: str, day: date) -> dict[str, set[str]]:
             if n:
                 out["otd"].add(n)
     return out
+
+
+def access_split(client: Any, lang: str, title: str, end: date, days: int = 14) -> tuple[list[int], list[int]] | None:
+    """(desktop, mobile-web) daily user views for ``days`` days ending on ``end``: the access split the topviews
+    heuristics use to spot bot-like traffic. None when either request fails or ``end`` is not published yet."""
+    out = []
+    start = end - timedelta(days=days - 1)
+    for access in ("desktop", "mobile-web"):
+        url = ART.format(lang=lang, title=quote(title.replace(" ", "_"), safe=""), gran="daily",
+                         start=start.strftime("%Y%m%d"), end=end.strftime("%Y%m%d")).replace("/all-access/user/", f"/{access}/user/")
+        try:
+            resp = client.get(url)
+        except (FetchError, RobotsDisallowed):
+            return None
+        if resp.status_code == 404:
+            out.append([0] * days)
+            continue
+        if resp.status_code != 200:
+            return None
+        got = dict(parse_series(resp.json()))
+        if got and max(got) < end:
+            return None
+        out.append([int(got.get(start + timedelta(days=i), 0)) for i in range(days)])
+    return out[0], out[1]
