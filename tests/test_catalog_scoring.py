@@ -474,8 +474,11 @@ def test_peak_info_and_fading_rows_are_not_rising():
     assert trend_of({"wikipedia": c}) == ("fading", None, "fading")
     live = dict(ch([1000] * 27 + [5000]), floor=5000.0, baseline=1000.0, **peak_info([1000] * 27 + [5000]))
     assert trend_of({"wikipedia": live})[:2] == ("rising", "strong")
-    # a rising channel that is still climbing keeps the topic rising even when another channel has faded
-    assert trend_of({"wikipedia": c, "hn": {"value": 300}})[:2] == ("rising", "strong")
+    # a Hacker News snapshot cannot keep a faded topic rising; with no history channel at all HN alone still lists it
+    assert trend_of({"wikipedia": c, "hn": {"value": 300}}) == ("fading", None, "fading")
+    assert trend_of({"hn": {"value": 300}})[:2] == ("rising", "strong")
+    still = dict(ch([1000] * 27 + [4000]), floor=500.0, baseline=1000.0, **peak_info([1000] * 27 + [4000]))
+    assert trend_of({"wikipedia": c, "news": still})[:2] == ("rising", "strong")             # news still climbing
 
 
 def test_fading_topic_row_is_listed_with_peak_info_and_never_ranked_as_a_riser():

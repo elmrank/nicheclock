@@ -138,9 +138,10 @@
     return { drop, daysAgo, day };
   }
   const FADING = 0.5;   // the last value is under half of the 14-day peak (the catalog uses the same line)
+  /* fading: the catalog says so, or the last day is under half of the 14-day peak and the peak is not the last day. A live Hacker News
+     snapshot can keep the catalog's trend "rising" for a topic whose readers are long gone; the page still says it has peaked. */
   function isFading(t) {
     if (t.trend === "fading") return true;
-    if (t.peak) return false;                     // the catalog already judged this row and kept it rising
     const p = peakInfo(t);
     return !!p && p.drop >= FADING && p.daysAgo >= 1;
   }

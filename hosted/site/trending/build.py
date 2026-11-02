@@ -250,7 +250,7 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         '<header class="bar"><div><strong class="brand">nicheclock</strong>'
         '<nav class="bar-links" aria-label="Documentation"><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a></nav></div></header>\n'
         f'<section class="hero"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p>'
-        '<p class="dim small">MCP runs locally from the source repository, over stdio. There is no hosted API and no API key sign-up yet, '
+        '<p class="dim small">The local MCP server speaks stdio. There is no hosted API and no API key sign-up yet, '
         'and the Trending now table below is not available through MCP or an API yet.</p></section>\n'
         f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
         + (prerender if prerender else '<p class="state">Loading data…</p>') + '\n'

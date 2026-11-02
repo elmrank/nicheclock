@@ -77,7 +77,7 @@ Off and excluded are different. A source that is off has terms that can be met a
 
 ### YouTube
 
-YouTube's most popular videos chart is read through the official API, once per region per day. The API terms limit what a client may do with it: statistics may not be stored for more than 30 days, and API data may not be replaced with independently calculated data or used to make derived metrics. So the build keeps only presence on the chart and the view count exactly as YouTube reports it, computes no ratio or score from either, and keeps nothing between runs. The files are excluded from git, so no dated copies pile up in history, and they are not published on this site: the deploy refuses to ship them.
+YouTube's most popular videos chart is read through the official API, once per region per day. The API terms limit what a client may do with it: statistics may not be stored for more than 30 days, and API data may not be replaced with independently calculated data or used to make derived metrics. So the build keeps only presence on the chart and the view count exactly as YouTube reports it, computes no ratio or score from either, and keeps nothing between runs. The files are excluded from git, so no dated copies pile up in history.
 
 ## What leaves your machine
 

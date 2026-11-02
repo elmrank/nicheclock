@@ -155,10 +155,11 @@ def trend_of(channels: dict[str, dict[str, Any]]) -> tuple[str, str | None, str]
     if st == "ended":
         return "fading", None, "ended"
     if st == "active":
-        # a channel past its peak is not rising any more: Wikipedia and news are judged on the last day against the
-        # 14-day peak; Hacker News (a snapshot) and charts have no peak and keep a topic rising
-        live = [c for c, ch in channels.items() if family_rising(c, ch) and (c not in ("wikipedia", "news") or not past_peak(ch))]
-        if not live:
+        # Wikipedia and news are the channels with a real history: when every one of them is past its peak (last day
+        # under half of the 14-day peak) the topic is fading, even if a Hacker News snapshot or a chart still lists it.
+        # Without such a channel (HN or a chart alone) there is no peak to judge and the topic stays rising.
+        hist = [ch for c, ch in channels.items() if c in ("wikipedia", "news") and ch.get("from_peak") is not None]
+        if hist and all(past_peak(ch) for ch in hist):
             return "fading", None, "fading"
     if st:
         return "rising", "strong", st

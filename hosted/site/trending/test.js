@@ -158,7 +158,8 @@ test("fading from the catalog: trend fading is listed below the rising rows with
   assert.ok(T.isFading(f1) && T.notRising(f1, "7d"));
   assert.equal(T.peakText(f1), "peaked Oct 29, now \u221281% from the peak");
   const kept = mk({ trend: "rising", series_end: "2026-10-31", peak: { value: 100, days_ago: 3, from_peak: 0.2 } });
-  assert.ok(!T.isFading(kept));   // the catalog saw a live channel (Hacker News) and kept it rising
+  assert.ok(T.isFading(kept));   // a live Hacker News snapshot kept it "rising" in the catalog; the page still says it has peaked
+  assert.ok(!T.isFading(mk({ trend: "rising", series_end: "2026-10-31", peak: { value: 100, days_ago: 1, from_peak: 0.7 } })));
   assert.equal(T.chRiseText({ value: 20, baseline: 3, ratio: null, windows: {}, ratio_note: "no baseline" }, "24h"), "new (no baseline)");
 });
 test("no figure anywhere on the fixture shows a plus before a minus", () => {
