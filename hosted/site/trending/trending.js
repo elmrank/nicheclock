@@ -280,18 +280,21 @@
 
   /* ---------- URL state ---------- */
 
-  const DEFAULTS = { tab: "trending", region: "all", window: "7d", cat: "all", type: "all", kind: "all", src: "all", gwin: "weekly", lang: "all", gsort: "stars", openOnly: true, rising: false, active: false, multi: false, q: "", sort: "rank", dir: "desc", open: "" };
+  const DEFAULTS = { tab: "trending", fit: false, nsort: "fit", nmode: "both", region: "all", window: "7d", cat: "all", type: "all", kind: "all", src: "all", gwin: "weekly", lang: "all", gsort: "stars", openOnly: true, rising: false, active: false, multi: false, q: "", sort: "rank", dir: "desc", open: "" };
   function parseHash(hash) {
     const m = String(hash || "").replace(/^#\/?/, "").split("?");
     const p = new URLSearchParams(m[1] || "");
     const s = Object.assign({}, DEFAULTS);
-    s.tab = m[0] === "upcoming" || m[0] === "github" ? m[0] : "trending";
+    s.tab = m[0] === "upcoming" || m[0] === "github" || m[0] === "niche" ? m[0] : "trending";
     ["region", "cat", "type", "kind", "src", "lang", "q", "open"].forEach((k) => { if (p.get(k)) s[k] = p.get(k); });
     if (DATA_WINDOWS.indexOf(p.get("window")) >= 0) s.window = p.get("window");
     if (["daily", "weekly", "monthly"].indexOf(p.get("gwin")) >= 0) s.gwin = p.get("gwin");
     if (["stars", "forks", "total"].indexOf(p.get("gsort")) >= 0) s.gsort = p.get("gsort");
     if (["rank", "rise", "volume", "recency", "sources"].indexOf(p.get("sort")) >= 0) s.sort = p.get("sort");
     if (p.get("dir") === "asc") s.dir = "asc";
+    s.fit = p.get("fit") === "1";
+    if (["fit", "rise", "volume"].indexOf(p.get("nsort")) >= 0) s.nsort = p.get("nsort");
+    if (["rising", "steady"].indexOf(p.get("nmode")) >= 0) s.nmode = p.get("nmode");
     s.active = p.get("active") === "1";
     s.rising = p.get("rising") === "1";
     s.multi = p.get("multi") === "1";
@@ -300,7 +303,8 @@
   }
   function buildHash(s) {
     const p = new URLSearchParams();
-    ["region", "window", "cat", "type", "kind", "src", "lang", "gwin", "gsort", "sort", "dir"].forEach((k) => { if (s[k] !== DEFAULTS[k]) p.set(k, s[k]); });
+    ["region", "window", "cat", "type", "kind", "src", "lang", "gwin", "gsort", "sort", "dir", "nsort", "nmode"].forEach((k) => { if (s[k] !== DEFAULTS[k]) p.set(k, s[k]); });
+    if (s.fit) p.set("fit", "1");
     if (s.active) p.set("active", "1");
     if (s.rising) p.set("rising", "1");
     if (s.multi) p.set("multi", "1");
@@ -455,6 +459,7 @@
       regionSel.title = sel.title;
     }
     const kids = [regionSel];
+    if (nicheAvailable()) kids.unshift(showControl());
     if (trending) {
       kids.push(h("div", { class: "ctl seg", role: "group", "aria-label": "Time window" }, [h("span", { class: "lbl", text: "Window" })].concat(
         WINDOWS.map((w) => h("button", { type: "button", class: "segbtn", "data-fk": "seg-" + w, "aria-pressed": String(state.window === w), text: w, disabled: !!WINDOW_OFF[w], title: WINDOW_OFF[w] || false, onclick: () => setState({ window: w, open: "" }) })))));
@@ -779,6 +784,52 @@
     ]);
   }
 
+  /* ---------- Your niche (docs/personalization.md) ----------
+     The profile page and the "For your niche" views live in niche.js, loaded with import() the first time one is opened. Nothing about
+     a profile is read here except its name (for the bar); the profile itself stays in localStorage and is never put in the URL hash. */
+  const NICHE_KEY = "nicheclock.profiles.v1";
+  function nicheAvailable() { return !!(data && data.meta && data.meta.match); }
+  function profileName() {
+    try {
+      const j = JSON.parse(localStorage.getItem(NICHE_KEY) || "null");
+      const p = j && (j.profiles || []).filter((x) => x.id === j.active)[0];
+      return p && p.name ? String(p.name) : "";
+    } catch (e) { return ""; }
+  }
+  function updateBar() {
+    const b = document.getElementById("nichebtn");
+    if (!b) return;
+    const name = profileName();
+    b.textContent = name ? "Your niche: " + name : "Your niche";
+    if (state.tab === "niche") b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+  function showControl() {
+    return h("div", { class: "ctl seg2", role: "group", "aria-label": "Show" }, [h("span", { class: "lbl", text: "Show" }),
+      h("button", { type: "button", class: "segbtn", "data-fk": "show-all", "aria-pressed": String(!state.fit), text: "All topics", onclick: () => setState({ fit: false, open: "" }) }),
+      h("button", { type: "button", class: "segbtn", "data-fk": "show-fit", "aria-pressed": String(state.fit), text: "For your niche", onclick: () => (profileName() ? setState({ fit: true, open: "" }) : setState({ tab: "niche", fit: false, open: "" }, false)) })]);
+  }
+  let nicheMod = null;
+  function nicheCtx() {
+    return { state, setState, data, base, storage: localStorage, showControl, profileChanged: updateBar,
+      u: { h, spark, pct, capped, factor, compact, dateLabel, utcDay, select, toggle, th, DAY } };
+  }
+  function nicheHost() {
+    const host = h("div", { class: "niche-host", id: "niche-host" });
+    const go = () => nicheMod.view(nicheCtx(), host);
+    if (nicheMod) go();
+    else {
+      host.appendChild(h("p", { class: "state", role: "status", text: "Loading\u2026" }));
+      import(app.getAttribute("data-niche") || "/assets/niche.js").then((m) => { nicheMod = m; if (host.isConnected) go(); })
+        .catch((e) => {
+          host.textContent = "";
+          host.appendChild(h("div", { class: "state" }, [h("strong", { text: "The niche view did not load." }), String(e && e.message || e) + " ",
+            h("div", {}, [h("button", { type: "button", class: "btn", text: "Reload the page", onclick: () => location.reload() })])]));
+        });
+    }
+    return host;
+  }
+  const nicheMode = () => state.tab === "niche" || (state.fit && nicheAvailable() && (state.tab === "trending" || state.tab === "upcoming"));
+
   /* ---------- page ---------- */
 
   function tabs() {
@@ -819,13 +870,18 @@
 
   function render() {
     if (state.tab === "github" && !data.gh) state = Object.assign({}, state, { tab: "trending" });
-    if (state.tab !== "github" && regionList() && !data.byRegion[regionId(state.region)]) { loadRegion(regionId(state.region)); return; }
+    if (state.tab === "niche" && !nicheAvailable()) state = Object.assign({}, state, { tab: "trending" });
+    if (state.tab !== "github" && !nicheMode() && regionList() && !data.byRegion[regionId(state.region)]) { loadRegion(regionId(state.region)); return; }
     nowMs = Date.parse(data.meta.generated_at) || Date.now();
     const kids = [];
     if (data.meta.sample) kids.push(h("p", { class: "sample", role: "note" }, [h("b", { text: "Sample data. " }), "The topics are real subjects, but every number is invented to test this page."]));
-    kids.push(tabs(), filterBar());
-    kids.push.apply(kids, state.tab === "trending" ? renderTrending() : state.tab === "github" ? renderGithub() : renderUpcoming());
-    kids.push(h("p", { class: "dim stamp", text: stamp() }));
+    if (state.tab === "niche") kids.push(nicheHost());
+    else if (nicheMode()) kids.push(tabs(), nicheHost());
+    else {
+      kids.push(tabs(), filterBar());
+      kids.push.apply(kids, state.tab === "trending" ? renderTrending() : state.tab === "github" ? renderGithub() : renderUpcoming());
+      kids.push(h("p", { class: "dim stamp", text: stamp() }));
+    }
     const y = window.scrollY, ae = document.activeElement;
     const fk = (ae && ae.getAttribute && ae.getAttribute("data-fk")) || pendingFk;
     pendingFk = null;
@@ -837,7 +893,9 @@
       if (back) { back.focus({ preventScroll: true }); if (caret !== null) back.setSelectionRange(caret, caret); }
     }
     window.scrollTo(0, y);
-    document.title = state.tab === "trending" ? pageTitle : (state.tab === "github" ? "GitHub rank" : "Upcoming") + " | nicheclock";
+    document.title = state.tab === "trending" ? pageTitle : (state.tab === "github" ? "GitHub rank" : state.tab === "niche" ? "Your niche" : "Upcoming") + " | nicheclock";
+    document.body.classList.toggle("niche-page", state.tab === "niche");
+    updateBar();
     foot();
   }
 

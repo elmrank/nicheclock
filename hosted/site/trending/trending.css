@@ -341,3 +341,98 @@ table.github td.sparkc { width: 6.5rem; }
   tr.up.gh td.rise { gap: 0.1rem; align-items: baseline; }
   tr.up.gh td.rise .tri { margin-right: 0.3em; }
 }
+
+/* ---------- Your niche: the profile page and the "For your niche" views (docs/personalization.md) ----------
+   Same tokens as above; no new colour, shadow or gradient. The Show control is the Window control's twin. */
+.bar-links .mybtn { font: 500 1rem var(--font-ui); border: 1px solid var(--rule); border-radius: 100px; padding: 0.1rem 0.9rem; text-decoration: none; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-links .mybtn[aria-current="page"] { border-color: var(--accent); }
+body.niche-page .hero, body.niche-page .intro, body.niche-page .about { display: none; }
+
+.page { max-width: 46rem; padding-top: 0.6rem; }
+.page h1 { font: 500 1.5rem var(--font-ui); }
+.page .lede { margin-top: 0.4rem; color: var(--ink2); max-width: 40rem; }
+.field { margin-top: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.field > label, .field > .lbl, fieldset legend { font: 500 1rem var(--font-ui); padding: 0; }
+.hint { font-size: 0.875rem; color: var(--ink2); }
+input[type="text"], input[type="number"] { background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 0.25rem 0.55rem; min-height: 2.25rem; width: 100%; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 0.2rem; }
+.row2 select { width: 100%; min-height: 2.25rem; max-width: none; }
+.page select { min-height: 2.25rem; }
+.chips-in { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+.chip { display: inline-flex; align-items: center; gap: 0.2rem; font: 500 0.9375rem var(--font-ui); padding: 0.15rem 0.35rem 0.15rem 0.75rem; border: 1px solid var(--rule); border-radius: 100px; }
+.chip.main { border-color: var(--accent); color: var(--accent); }
+.chip button { background: none; border: 0; cursor: pointer; padding: 0 0.35rem; font: 500 1rem var(--font-ui); color: var(--ink2); }
+.chip button.role { font: 400 0.8125rem var(--font); padding: 0 0.15rem; }
+.chip.main button.role { cursor: default; }
+.chip.add { padding: 0.15rem 0.75rem; cursor: pointer; background: none; color: var(--accent); }
+.sugbox { border: 1px solid var(--rule); border-radius: 8px; margin-top: 0.15rem; background: var(--bg); }
+.sugbox[hidden] { display: none; }
+.sugbox div { padding: 0.35rem 0.6rem; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.sugbox div:last-child { border-bottom: 0; }
+.sugbox div[aria-selected="true"], .sugbox div:hover { background: var(--tint); }
+.sugbox div.note { cursor: default; color: var(--ink2); font-size: 0.9375rem; }
+.sugbox b { font: 500 1rem var(--font-ui); }
+.sugbox .d { color: var(--ink2); font-size: 0.875rem; }
+.cluster { margin-top: 1.4rem; padding-top: 0.2rem; border-top: 1px solid var(--rule); }
+.cluster h2 { font: 500 1.125rem var(--font-ui); margin-top: 0.7rem; }
+.btn2 { background: none; color: var(--accent); border: 1px solid var(--rule); border-radius: 100px; padding: 0.4rem 1rem; cursor: pointer; font: 500 0.875rem var(--font-ui); min-height: 2.25rem; }
+.btn2:hover { background: var(--tint); }
+a.btn { display: inline-block; text-decoration: none; }
+.inline2 { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.checks { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; margin-top: 0.2rem; border: 0; padding: 0; min-width: 0; }
+.checks label { display: inline-flex; gap: 0.4rem; align-items: center; }
+.checks input { accent-color: var(--accent); width: 1.1rem; height: 1.1rem; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-top: 1.4rem; }
+.privacy { margin-top: 1rem; padding: 0.4rem 0.7rem; background: var(--tint); border-radius: 8px; font-size: 0.9375rem; max-width: 40rem; }
+.privacy details { margin-top: 0.3rem; }
+.privacy summary { cursor: pointer; color: var(--accent); }
+.msg { margin-top: 0.8rem; color: var(--urgent); min-height: 0; }
+.msg.ok { color: var(--ink2); }
+.msg:empty { display: none; }
+.samples { margin-top: 0.4rem; }
+.samples a { margin-right: 0.8rem; }
+.bridges .hint { margin-top: 0.5rem; }
+
+.seg2 { display: grid; grid-template-columns: repeat(2, auto); }
+.seg2 .lbl { grid-column: 1 / -1; }
+.seg2 .segbtn { white-space: nowrap; background: none; border: 1px solid var(--rule); border-left-width: 0; padding: 0.2rem 0.6rem; min-height: 2rem; cursor: pointer; font: 500 1rem var(--font-ui); }
+.seg2 .lbl + .segbtn { border-left-width: 1px; border-radius: 8px 0 0 8px; }
+.seg2 .segbtn:last-child { border-radius: 0 8px 8px 0; }
+.seg2 .segbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.seg3 .segbtn { white-space: nowrap; }
+
+.mine { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; margin-top: 0.5rem; padding: 0.35rem 0.6rem; background: var(--tint); border-radius: 8px; }
+.mine b { font: 500 1rem var(--font-ui); }
+.mine .grow { flex: 1 1 auto; }
+.why { display: block; font-size: 0.8125rem; line-height: 1.25; margin-top: 0.1rem; color: var(--ink); }
+td.fitc { width: 5.2rem; white-space: nowrap; vertical-align: middle; }
+.fit { font: 500 1.0625rem var(--font-ui); }
+.fitbar { display: block; width: 3.4rem; height: 4px; background: var(--rule); border-radius: 2px; margin-top: 0.2rem; }
+.fitbar span { display: block; height: 4px; background: var(--ink2); border-radius: 2px; }
+tr.below td { color: var(--ink2); }
+details.weaker { margin-top: 0.8rem; }
+details.weaker > summary { cursor: pointer; font: 500 1rem var(--font-ui); }
+.slot { white-space: nowrap; font-weight: 700; }
+td.slotc { vertical-align: middle; }
+table.niche td.vols { width: 18%; }
+
+@media (max-width: 44rem) {
+  .bar-links { gap: 0.7rem; flex-wrap: wrap; }
+  .bar-links .mybtn { padding: 0.1rem 0.7rem; max-width: 11rem; }
+  .seg2 { grid-template-columns: 1fr 1fr; grid-column: 1 / -1; }
+  .row2 { grid-template-columns: 1fr; }
+  .page { padding-top: 0.4rem; }
+  .actions .btn, .actions .btn2 { flex: 1 1 auto; }
+  /* niche rows keep the phone grid above and add Fit under the rise figure */
+  tr.row.fitrow { grid-template-columns: 5.6rem 1fr auto; }
+  tr.row.fitrow td.rise { grid-row: 1; grid-column: 1; }
+  tr.row.fitrow td.fitc { grid-column: 1; grid-row: 2 / span 3; align-self: start; padding-top: 0; }
+  tr.row.fitrow td.fitc::before { content: "Fit "; font: 400 0.8125rem var(--font); color: var(--ink2); }
+  tr.row.fitrow td.topic { grid-column: 2 / -1; grid-row: 1; }
+  tr.row.fitrow td.vols { grid-column: 2 / -1; grid-row: 2; }
+  tr.row.fitrow td.sparkc { grid-column: 2; grid-row: 3; }
+  tr.row.fitrow td.stat { grid-column: 2 / -1; grid-row: 4; }
+  tr.up td.fitc { display: flex; align-items: center; gap: 0.6rem; }
+  tr.up td.fitc::before { content: attr(data-label); flex: 0 0 5.6rem; font-weight: 700; color: var(--ink2); }
+  tr.up td.fitc .fitbar { margin-top: 0; }
+}

@@ -111,6 +111,10 @@ The ledger also lists sources that were considered and left out: Nager.Date (non
 
 The self-hosted tool reads a slightly different set (Google Trends RSS, Wikipedia, Hacker News, GitHub, Apple charts, GDELT, Federal Register, and the RSS and ICS feeds you list yourself). Its terms table is [docs/sources.md](docs/sources.md). Sources that forbid automated collection, such as Reddit, Product Hunt and Amazon, are not read.
 
+## Your niche (website)
+
+On the hosted site, the quiet **Your niche** link in the top bar lets you say what you write about and see the rising Wikipedia pages and the dated events that fit, each with the reason. The profile is stored in your browser only: the page downloads public data files and matches on your device, and `hosted/site/trending/test-privacy.js` checks that no request carries it. A page fits a topic through facts on Wikidata (the same item, a class, an occupation, a sport or subject, a taxon group, a title word), each with a fixed score; there is no model and no search volume. It covers the four countries whose Wikimedia per-country pageview file has enough pages for a pool (United States, India, Brazil, Indonesia), works best for sports, games, film, music and species, and is weak for hobbies and ingredients (measured results in [docs/personalization.md](docs/personalization.md)). Reading your own site or YouTube channel to fill in topics, and MCP tools that take a profile, are not built yet.
+
 ## Documentation
 
 | | |

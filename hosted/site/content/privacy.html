@@ -18,7 +18,11 @@ section: legal
 <p>We keep daily totals per page. We don't store one row per visitor, and we don't store your IP address, a cookie, a user agent or any identifier. The script reads the user agent only to skip crawlers and does nothing if the browser reports automation.</p>
 
 <h2>Cookies and third parties</h2>
-<p>The site sets no cookies and stores nothing in your browser. It loads no third-party scripts, fonts or trackers. Links to sources and to GitHub take you to their sites, which have their own policies.</p>
+<p>The site sets no cookies. It stores nothing in your browser unless you save a niche profile (next section). It loads no third-party scripts, fonts or trackers. Links to sources and to GitHub take you to their sites, which have their own policies.</p>
+
+<h2>Your niche profile</h2>
+<p>The optional <strong>Your niche</strong> page keeps a profile (the topics you write about, a country, and anything else you type there) in this browser only, in <code>localStorage</code> under one key. It is never put in the address, so a copied link cannot carry it and the page counter above cannot see it. <strong>No profile data leaves your browser</strong>: the page downloads the same public data files as every visitor (the page, its scripts, the topic list and one list of Wikipedia pages for your country, all without a query string) and does the matching on your device. Typing a topic, saving, editing, switching profiles and exporting send nothing. The site has no copy of your profile, so it cannot restore it: Export JSON gives you a file to keep. Delete this profile removes it from the browser, and a private window forgets it when it closes. A shared computer keeps it until you delete it.</p>
+<p>To check this yourself, open the developer tools, choose Network, and press Show my niche: you will see GET requests for data files and none that carries what you typed.</p>
 
 <h2>Network logs</h2>
 <p>Cloudflare serves the site and keeps its own network logs, which include IP addresses, under its own policies. We don't add to them, and we don't sell or share anything.</p>
@@ -29,4 +33,4 @@ section: legal
 <h2>Accounts</h2>
 <p>There are no accounts, no sign-in and no API keys on this site at the moment, so we hold no personal data about you beyond what is written above. If that changes, this page changes first.</p>
 
-<p>{{CONTACT}} Last updated 2026-11-01.</p>
+<p>{{CONTACT}} Last updated 2026-11-02.</p>

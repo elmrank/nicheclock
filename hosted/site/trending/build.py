@@ -12,6 +12,7 @@ site/build.py --home trending uses stage() and index_html() to make this page th
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import html
 import json
@@ -56,7 +57,7 @@ def _hashed(data: bytes, name: str) -> str:
     return f"{stem}.{hashlib.sha256(data).hexdigest()[:8]}.{ext}"
 
 
-def public_meta(path: Path) -> str:
+def public_meta(path: Path, match: dict | None = None) -> str:
     """meta.json as published: only the sources the catalog uses and the live site shows. The `excluded` and `planned` entries hold
     internal decisions and a roadmap; HIDDEN_SOURCES are kept off the site until their terms are re-read."""
     meta = json.loads(path.read_text(encoding="utf-8"))
@@ -64,6 +65,8 @@ def public_meta(path: Path) -> str:
         meta["sources"] = [x for x in meta["sources"] if (not x.get("status") or x.get("status") == "used") and x.get("id") not in HIDDEN_SOURCES]
     if isinstance(meta.get("source_filter"), list):
         meta["source_filter"] = [x for x in meta["source_filter"] if x.get("key") not in HIDDEN_SOURCES]
+    if match:
+        meta["match"] = match
     return json.dumps(meta, ensure_ascii=False, indent=1) + "\n"
 
 
@@ -109,6 +112,41 @@ def public_topics(path: Path) -> str:
     return json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
+def _write_hashed(dest: Path, name: str, doc: dict) -> tuple[str, int]:
+    blob = json.dumps(doc, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n"
+    hashed = _hashed(blob, name)
+    (dest / hashed).write_bytes(blob)
+    return "/catalog-data/match/" + hashed, len(gzip.compress(blob, 9))
+
+
+def stage_match(dest: Path, data: Path) -> dict | None:
+    """The niche files (nicheclock/catalog/match_cmd.py) under catalog-data/match/ with a content hash in their names, so a browser
+    keeps them for a year and a new build is a new URL. The names are listed in the published meta.json ("match"); the page reads
+    them from there, and fetches a pool only when a visitor opens "For your niche". Adult and blocked titles are dropped again here,
+    as for the trending files."""
+    src = data / "match"
+    if not (src / "manifest.json").is_file():
+        return None
+    manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
+    out = dest / "match"
+    out.mkdir(parents=True)
+    info: dict = {"date": manifest["date"], "regions": {}}
+    for iso, st in manifest["regions"].items():
+        doc = json.loads((src / f"pool-{iso}.json").read_text(encoding="utf-8"))
+        doc["rows"] = [r for r in doc["rows"] if not _blocked({"label": r[1], "qid": f"Q{r[0]}"})]
+        file, gz = _write_hashed(out, f"pool-{iso}.json", doc)
+        info["regions"][iso] = {"file": file, "rows": len(doc["rows"]), "rising": st["rising"], "gzip_bytes": gz}
+    doc = json.loads((src / "concepts.json").read_text(encoding="utf-8"))
+    doc["rows"] = [r for r in doc["rows"] if not _blocked({"label": r[1], "qid": f"Q{r[0]}"})]
+    file, gz = _write_hashed(out, "concepts.json", doc)
+    info["concepts"] = {"file": file, "rows": len(doc["rows"]), "gzip_bytes": gz}
+    for key, name in (("bridges", "bridges.json"), ("observances", "observances.json")):
+        if (src / name).is_file():
+            file, gz = _write_hashed(out, name, json.loads((src / name).read_text(encoding="utf-8")))
+            info[key] = {"file": file, "gzip_bytes": gz}
+    return info
+
+
 def stage(out: Path, data: Path) -> dict[str, str]:
     """Write hashed css/js/font into out/assets and the JSON into out/catalog-data. Returns the hashed names."""
     for f in DATA_FILES:
@@ -128,15 +166,28 @@ def stage(out: Path, data: Path) -> dict[str, str]:
     js = (HERE / "trending.js").read_bytes()
     names["js"] = _hashed(js, "trending.js")
     (assets / names["js"]).write_bytes(js)
+    # the niche modules: niche.js imports match.js and profile.js by relative name, so those names are rewritten to the hashed ones
+    for mod in ("match", "profile"):
+        blob = (HERE / f"{mod}.js").read_bytes()
+        names[mod] = _hashed(blob, f"{mod}.js")
+        (assets / names[mod]).write_bytes(blob)
+    niche = (HERE / "niche.js").read_text(encoding="utf-8")
+    for mod in ("match", "profile"):
+        if f'"./{mod}.js"' not in niche:
+            sys.exit(f"niche.js does not import ./{mod}.js")
+        niche = niche.replace(f'"./{mod}.js"', f'"./{names[mod]}"')
+    names["niche"] = _hashed(niche.encode("utf-8"), "niche.js")
+    (assets / names["niche"]).write_text(niche, encoding="utf-8")
     for lic in ("OFL-Roboto.txt", "OFL-Google-Sans-Flex.txt"):
         shutil.copy(HERE / "fonts" / lic, assets / lic)
     dest = out / "catalog-data"
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
+    match_info = stage_match(dest, data)
     for f in data_files(data):
         if f.name == "meta.json":
-            (dest / f.name).write_text(public_meta(f), encoding="utf-8")
+            (dest / f.name).write_text(public_meta(f, match_info), encoding="utf-8")
         elif f.name.startswith("trending") and f.suffix == ".json":
             (dest / f.name).write_text(public_topics(f), encoding="utf-8")
         elif f.name == "github-rank.json" and "gharchive" in HIDDEN_SOURCES:
@@ -248,11 +299,11 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         + (f'<script src="/assets/{beacon}" defer></script>\n' if beacon else "")
         + '</head>\n<body>\n'
         '<header class="bar"><div><strong class="brand">nicheclock</strong>'
-        '<nav class="bar-links" aria-label="Documentation"><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a></nav></div></header>\n'
+        '<nav class="bar-links" aria-label="Documentation"><a class="mybtn" id="nichebtn" href="#/niche">Your niche</a><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a></nav></div></header>\n'
         f'<section class="hero"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p>'
         '<p class="dim small">The local MCP server speaks stdio. There is no hosted API and no API key sign-up yet, '
         'and the Trending now table below is not available through MCP or an API yet.</p></section>\n'
-        f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
+        f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-niche="/assets/{names["niche"]}" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
         + (prerender if prerender else '<p class="state">Loading data…</p>') + '\n'
         '<noscript><p class="state">The interactive table needs JavaScript. The data is plain JSON: <a href="/catalog-data/trending.json">/catalog-data/trending.json</a>.</p></noscript>\n</main>\n'
         '<section class="about" id="about"><h2>What nicheclock is</h2>'

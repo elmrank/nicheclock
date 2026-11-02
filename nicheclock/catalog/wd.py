@@ -18,7 +18,7 @@ ENTITY_TTL = 7 * 86400
 SEARCH_TTL = 14 * 86400
 SPARQL_TTL = 12 * 3600
 # Statements kept per entity (everything the category rules read).
-TRACKED = ("P31", "P279", "P106", "P641", "P171", "P136")
+TRACKED = ("P31", "P279", "P106", "P641", "P171", "P136", "P361", "P921", "P179", "P8345", "P800")
 # Sitelink sites kept as page titles (the wikis the daily build reads).
 KEEP_SITES = ("enwiki", "eswiki", "hiwiki", "zhwiki", "idwiki", "urwiki", "ptwiki", "bnwiki", "ruwiki", "amwiki",
               "hawiki", "yowiki")
@@ -93,7 +93,7 @@ class Wikidata:
         out: dict[str, dict[str, Any] | None] = {}
         todo = []
         for i in want:
-            found, hit = self.cache.get("ent2", i, ENTITY_TTL)
+            found, hit = self.cache.get("ent3", i, ENTITY_TTL)
             if found:
                 out[i] = hit
             else:
@@ -110,7 +110,7 @@ class Wikidata:
             for i in chunk:
                 rec = compact_entity(ents.get(i) or {})
                 out[i] = rec
-                self.cache.put("ent2", i, rec)
+                self.cache.put("ent3", i, rec)
             self.cache.commit()
         return out
 
@@ -139,7 +139,7 @@ class Wikidata:
                 rec = compact_entity(raw)
                 if rec is None:
                     continue
-                self.cache.put("ent2", rec["id"], rec)
+                self.cache.put("ent3", rec["id"], rec)
                 st = (raw.get("sitelinks") or {}).get(site)
                 if st:
                     by_title[st["title"]] = rec["id"]

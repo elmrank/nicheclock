@@ -221,3 +221,29 @@ Stars and forks are the difference between our own daily snapshots of the GitHub
 (a window we cannot know yet is null, never 0); description, language, topics and totals come from the same API. The MCP tool and REST route `github_rising(language?, window?, limit?)`
 read this file. Worldwide rows of `trending.json` also carry the rising repos as Technology topics (`id` `gh:owner/name`, `qid` null,
 `channels.github` with unit `stars/day`).
+
+## match/ (the niche pool for "Your niche")
+
+Written by `python -m nicheclock.catalog match` after `build` (see docs/personalization.md). Not read by the Worker; the page fetches a pool
+only when "Your niche" or "For your niche" is opened. All files are compact JSON.
+
+```
+match/pool-<US|IN|BR|ID>.json   { schema: 1, region, date, unit, source, license, rows: [row] }
+  row: [qid number, title, views on the last day, ratio vs the median of the 14 days before (capped 10), handles[], series[7] | 0, flags]
+  Pool: every page of the country's Wikimedia pageview file with >= 120 views and >= 1.25x its median (rising) or >= 200 views (steady),
+  plus the catalog's own topics. Budget: <= 2.5 MB gzip for US, 0.5 MB for the others (the steady floor rises until it fits, noted in the manifest).
+  handle = qid * 64 + kind * 16 + sub: kind 0 class (sub = distance 1..3), 1 occupation (distance 0..2), 2 subject (sub = property: P641 0, P921 1,
+  P361 2, P179 3, P8345 4, P136 5, P800 6), 3 taxon (distance 1..12). A class on 3% or more of the pool is dropped; at most 3 per kind.
+  flags: 1 person, 2 fictional or legendary, 4 page about a taxon above genus, 8 rising, bits 4-7 number of occupations (max 15)
+match/concepts.json             { schema: 1, date, rows: [[qid, label, description, popularity, aliases]], labels: [[qid, label]] }
+  rows are typeable (popular pages and the classes many rows point at), labels name every other target of a handle
+match/bridges.json              { schema: 1, date, note, bridges: { "Q..": [[neighbour qid, rows it matches], ...] } }
+  hobbies, sports and fields only: topics their English Wikipedia article links to and that link back
+match/observances.json          { schema: 1, today, kind, lag_days, source, license, recurrence, rows: [[qid, title, date, rule, sitelinks, category, handles, flags]] }
+  yearly observances (Wikidata P837) that have a handle, with the next date of the rule; the plain Upcoming list does not contain them
+match/manifest.json             what the last run read, row counts, gzip sizes, notes
+upcoming.json events with a Wikidata id carry  niche: { h: handles[], f: flags }
+```
+
+The published `meta.json` gets a `match` object with the content-hashed file names (`/catalog-data/match/pool-US.<hash>.json`), which the build of
+the site writes; the raw files here keep stable names.

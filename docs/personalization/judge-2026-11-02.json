@@ -1,0 +1,933 @@
+{
+ "date": "2026-11-02",
+ "data_day": "2026-11-01 (Wikimedia per-country pageviews)",
+ "question": "Would a site about <niche> plausibly publish a page about this topic for its readers? Borderline counts as no.",
+ "method": "Blind pass by the agent that built the matcher (an independent subagent was not available): each distinct row of the top-20 lists was shown with only its label, its Wikidata description and the niche, in alphabetical order (no fit, reason or rank), and answered yes or no. The same answer applies wherever the row appears. Rule used: a species or a common-name group of birds counts yes; a genus, family or order shown by its scientific name, an extinct or legendary bird, and a film count no; a bread type that is not sourdough counts no.",
+ "profiles": {
+  "chess": "chess (main), chess opening",
+  "birdwatching": "birdwatching (main), bird",
+  "sourdough": "sourdough (main), sourdough bread, bread"
+ },
+ "rows": {
+  "chess": [
+   {
+    "qid": "Q131674",
+    "label": "Anatoly Karpov",
+    "description": "Russian chess player",
+    "on_niche": true
+   },
+   {
+    "qid": "Q41314",
+    "label": "Bobby Fischer",
+    "description": "American chess player (1943–2008)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q177310",
+    "label": "Boris Spassky",
+    "description": "Russian chess player (1937–2025)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q718",
+    "label": "chess",
+    "description": "strategy board game",
+    "on_niche": true
+   },
+   {
+    "qid": "Q131304758",
+    "label": "Chess World Cup 2025",
+    "description": "international chess tournament",
+    "on_niche": true
+   },
+   {
+    "qid": "Q724903",
+    "label": "Chess960",
+    "description": "chess variant invented by Bobby Fischer",
+    "on_niche": true
+   },
+   {
+    "qid": "Q5218240",
+    "label": "Daniel Naroditsky",
+    "description": "American chess player (1995–2025)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q205730",
+    "label": "en passant",
+    "description": "special move in chess where, immediately after a pawn makes a 2-step move, if it could have been captured by a",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1690563",
+    "label": "FIDE titles",
+    "description": "titles for chess players awarded by FIDE",
+    "on_niche": true
+   },
+   {
+    "qid": "Q17075967",
+    "label": "Fischer–Spassky",
+    "description": "1992 chess match between Bobby Fischer and Boris Spassky",
+    "on_niche": true
+   },
+   {
+    "qid": "Q105269",
+    "label": "Grandmaster",
+    "description": "title in chess awarded by FIDE",
+    "on_niche": true
+   },
+   {
+    "qid": "Q56026072",
+    "label": "Gukesh D",
+    "description": "Indian chess grandmaster",
+    "on_niche": false
+   },
+   {
+    "qid": "Q59137809",
+    "label": "Hans Niemann",
+    "description": "American chess grandmaster",
+    "on_niche": true
+   },
+   {
+    "qid": "Q27532037",
+    "label": "Javokhir Sindarov",
+    "description": "Uzbek chess grandmaster and 2026 Candidates Tournament winner",
+    "on_niche": true
+   },
+   {
+    "qid": "Q15890165",
+    "label": "Life of a King",
+    "description": "2013 film",
+    "on_niche": true
+   },
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "description": "Norwegian chess player (born 1990)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q529393",
+    "label": "Miyoko Watai",
+    "description": "Japanese women's chess champion, and the general secretary of the Japan Chess Association",
+    "on_niche": false
+   },
+   {
+    "qid": "Q105589",
+    "label": "Paul Morphy",
+    "description": "US chess player (1837–1884)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q705525",
+    "label": "Peter Thiel",
+    "description": "German-American entrepreneur and venture capitalist (born 1967)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q26703041",
+    "label": "Praggnanandhaa",
+    "description": "Indian chess player",
+    "on_niche": true
+   },
+   {
+    "qid": "Q99732629",
+    "label": "Samay Raina",
+    "description": "Indian stand-up comedian",
+    "on_niche": false
+   },
+   {
+    "qid": "Q180636",
+    "label": "Tigran Petrosian",
+    "description": "Soviet Armenian Grandmaster and World Chess Champion",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1351113",
+    "label": "William Lombardy",
+    "description": "American chess player (1937-2017)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q190042",
+    "label": "World Chess Championship",
+    "description": "chess competition played to determine the world champion in chess",
+    "on_niche": true
+   },
+   {
+    "qid": "Q596416",
+    "label": "World Chess Championship 1972",
+    "description": "1972 chess match in Reykjavík, Iceland for the World Chess Championship between challenger Bobby Fischer (USA)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q124485722",
+    "label": "World Chess Championship 2026",
+    "description": "world chess championship match",
+    "on_niche": true
+   }
+  ],
+  "birdwatching": [
+   {
+    "qid": "Q8154335",
+    "label": "Alcedinidae",
+    "description": "family of birds",
+    "on_niche": false
+   },
+   {
+    "qid": "Q43642",
+    "label": "Apteryx",
+    "description": "genus of birds",
+    "on_niche": false
+   },
+   {
+    "qid": "Q126167",
+    "label": "bearded vulture",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q5113",
+    "label": "bird",
+    "description": "class of vertebrates characterized by wings, a feather-covered body and a beak",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1137288",
+    "label": "Blakiston`s Eagle Owl",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q29564928",
+    "label": "Cygnus",
+    "description": "genus of birds",
+    "on_niche": true
+   },
+   {
+    "qid": "Q43502",
+    "label": "Dodo",
+    "description": "species of extinct bird",
+    "on_niche": false
+   },
+   {
+    "qid": "Q27074911",
+    "label": "Downy Woodpecker",
+    "description": "species of bird",
+    "on_niche": false
+   },
+   {
+    "qid": "Q3736439",
+    "label": "duck",
+    "description": "common name for many species in the bird family Anatidae",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2092297",
+    "label": "eagle",
+    "description": "large carnivorous bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q93208",
+    "label": "Emu",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q3901583",
+    "label": "Flamingos",
+    "description": "family of birds",
+    "on_niche": true
+   },
+   {
+    "qid": "Q177856",
+    "label": "Griffon Vulture",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q503804",
+    "label": "Grus canadensis",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q477133",
+    "label": "Indian Roller",
+    "description": "species of bird",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2983957",
+    "label": "liver bird",
+    "description": "mythical bird from Liverpool",
+    "on_niche": false
+   },
+   {
+    "qid": "Q43794",
+    "label": "Meleagris",
+    "description": "North American genus of large birds",
+    "on_niche": true
+   },
+   {
+    "qid": "Q8021345",
+    "label": "owl",
+    "description": "common name denoting a group of nocturnal birds",
+    "on_niche": false
+   },
+   {
+    "qid": "Q201251",
+    "label": "peafowl",
+    "description": "group of birds formed by the Indian peafowl, the green peafowl and the Congo peafowl",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2086368",
+    "label": "Pelagornis",
+    "description": "genus of birds (fossil)",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1071983",
+    "label": "Penelope",
+    "description": "genus of birds",
+    "on_niche": false
+   },
+   {
+    "qid": "Q457471",
+    "label": "Red-tailed Hawk",
+    "description": "species of bird",
+    "on_niche": false
+   },
+   {
+    "qid": "Q223359",
+    "label": "Rio",
+    "description": "2011 American animated film directed by Carlos Saldanha",
+    "on_niche": false
+   },
+   {
+    "qid": "Q25222",
+    "label": "Strigiformes",
+    "description": "order of birds",
+    "on_niche": false
+   },
+   {
+    "qid": "Q2576337",
+    "label": "Struthio",
+    "description": "genus of birds",
+    "on_niche": true
+   },
+   {
+    "qid": "Q123120",
+    "label": "vulture",
+    "description": "common name for several types of scavenging birds of prey",
+    "on_niche": true
+   },
+   {
+    "qid": "Q26844",
+    "label": "Wild Turkey",
+    "description": "species of turkey native to North America",
+    "on_niche": true
+   }
+  ],
+  "sourdough": [
+   {
+    "qid": "Q3634389",
+    "label": "Baati",
+    "description": "type of bread popular in western India",
+    "on_niche": false
+   },
+   {
+    "qid": "Q7802",
+    "label": "bread",
+    "description": "baked food made of flour, water and other ingredients",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1142029",
+    "label": "crumpet",
+    "description": "Small unsweetened griddle bread",
+    "on_niche": false
+   },
+   {
+    "qid": "Q7214426",
+    "label": "frybread",
+    "description": "flat bread, fried or deep-fried in oil, shortening, or lard; dish of the U.S. indigenous people",
+    "on_niche": false
+   },
+   {
+    "qid": "Q836891",
+    "label": "hardtack",
+    "description": "simple, spoil-resistant cracker",
+    "on_niche": false
+   },
+   {
+    "qid": "Q2446322",
+    "label": "knish",
+    "description": "Ashkenazi Jewish baked or fried snack food consisting of a filling covered with dough",
+    "on_niche": false
+   },
+   {
+    "qid": "Q5477096",
+    "label": "rusk",
+    "description": "hard, dry biscuit or a twice-baked bread",
+    "on_niche": false
+   },
+   {
+    "qid": "Q207104",
+    "label": "sacramental bread",
+    "description": "communion bread used in the Lord's Supper",
+    "on_niche": false
+   },
+   {
+    "qid": "Q3360560",
+    "label": "sourdough bread",
+    "description": "bread made with a sourdough starter",
+    "on_niche": true
+   },
+   {
+    "qid": "Q8031737",
+    "label": "Wonder Bread",
+    "description": "Brand name bread",
+    "on_niche": false
+   }
+  ]
+ },
+ "results": {
+  "baseline_design_weights": {
+   "chess|US": {
+    "N": 20,
+    "yes": 19,
+    "pct": 95,
+    "fits": 33,
+    "weaker": 10
+   },
+   "chess|IN": {
+    "N": 8,
+    "yes": 6,
+    "pct": 75,
+    "fits": 8,
+    "weaker": 2
+   },
+   "chess|BR": {
+    "N": 2,
+    "yes": 2,
+    "pct": 100,
+    "fits": 2,
+    "weaker": 0
+   },
+   "birdwatching|US": {
+    "N": 20,
+    "yes": 13,
+    "pct": 65,
+    "fits": 42,
+    "weaker": 21
+   },
+   "birdwatching|IN": {
+    "N": 2,
+    "yes": 2,
+    "pct": 100,
+    "fits": 2,
+    "weaker": 3
+   },
+   "birdwatching|BR": {
+    "N": 2,
+    "yes": 0,
+    "pct": 0,
+    "fits": 2,
+    "weaker": 3
+   },
+   "sourdough|US": {
+    "N": 9,
+    "yes": 2,
+    "pct": 22,
+    "fits": 9,
+    "weaker": 15
+   },
+   "sourdough|IN": {
+    "N": 1,
+    "yes": 0,
+    "pct": 0,
+    "fits": 1,
+    "weaker": 0
+   },
+   "sourdough|BR": {
+    "N": 0,
+    "yes": 0,
+    "pct": null,
+    "fits": 0,
+    "weaker": 0
+   }
+  },
+  "final_as_shipped": {
+   "chess|US": {
+    "N": 20,
+    "yes": 19,
+    "pct": 95,
+    "fits": 33,
+    "weaker": 10
+   },
+   "chess|IN": {
+    "N": 8,
+    "yes": 6,
+    "pct": 75,
+    "fits": 8,
+    "weaker": 2
+   },
+   "chess|BR": {
+    "N": 2,
+    "yes": 2,
+    "pct": 100,
+    "fits": 2,
+    "weaker": 0
+   },
+   "birdwatching|US": {
+    "N": 20,
+    "yes": 14,
+    "pct": 70,
+    "fits": 39,
+    "weaker": 19
+   },
+   "birdwatching|IN": {
+    "N": 2,
+    "yes": 2,
+    "pct": 100,
+    "fits": 2,
+    "weaker": 0
+   },
+   "birdwatching|BR": {
+    "N": 2,
+    "yes": 0,
+    "pct": 0,
+    "fits": 2,
+    "weaker": 3
+   },
+   "sourdough|US": {
+    "N": 9,
+    "yes": 2,
+    "pct": 22,
+    "fits": 9,
+    "weaker": 15
+   },
+   "sourdough|IN": {
+    "N": 1,
+    "yes": 0,
+    "pct": 0,
+    "fits": 1,
+    "weaker": 0
+   },
+   "sourdough|BR": {
+    "N": 0,
+    "yes": 0,
+    "pct": null,
+    "fits": 0,
+    "weaker": 0
+   }
+  }
+ },
+ "tuning": "Baseline = the first weights chosen in the design (the niche matching table in docs/personalization.md). Final adds two changes made after seeing the baseline lists: the clade factor (0.5) applies to every tie of a page about a taxon above genus except 'same', and a class whose name starts with legendary, mythical or mythological joins the fictional guard. No threshold was changed.",
+ "lists": {
+  "chess|US": [
+   {
+    "qid": "Q177310",
+    "label": "Boris Spassky",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q596416",
+    "label": "World Chess Championship 1972",
+    "fit": 88,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q529393",
+    "label": "Miyoko Watai",
+    "fit": 86,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q41314",
+    "label": "Bobby Fischer",
+    "fit": 74,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q1351113",
+    "label": "William Lombardy",
+    "fit": 77,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q15890165",
+    "label": "Life of a King",
+    "fit": 80,
+    "why": "About chess, which you follow."
+   },
+   {
+    "qid": "Q105589",
+    "label": "Paul Morphy",
+    "fit": 86,
+    "why": "Chess theoretician: you follow chess."
+   },
+   {
+    "qid": "Q17075967",
+    "label": "Fischer–Spassky",
+    "fit": 80,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q724903",
+    "label": "Chess960",
+    "fit": 98,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q124485722",
+    "label": "World Chess Championship 2026",
+    "fit": 88,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q180636",
+    "label": "Tigran Petrosian",
+    "fit": 74,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q131674",
+    "label": "Anatoly Karpov",
+    "fit": 72,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q718",
+    "label": "chess",
+    "fit": 100,
+    "why": "This is the topic you follow: chess."
+   },
+   {
+    "qid": "Q190042",
+    "label": "World Chess Championship",
+    "fit": 95,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q205730",
+    "label": "en passant",
+    "fit": 92,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q105269",
+    "label": "Grandmaster",
+    "fit": 92,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q1690563",
+    "label": "FIDE titles",
+    "fit": 92,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q5218240",
+    "label": "Daniel Naroditsky",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q59137809",
+    "label": "Hans Niemann",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   }
+  ],
+  "chess|IN": [
+   {
+    "qid": "Q131304758",
+    "label": "Chess World Cup 2025",
+    "fit": 95,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q27532037",
+    "label": "Javokhir Sindarov",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q124485722",
+    "label": "World Chess Championship 2026",
+    "fit": 88,
+    "why": "Sport: chess, which you follow."
+   },
+   {
+    "qid": "Q718",
+    "label": "chess",
+    "fit": 100,
+    "why": "This is the topic you follow: chess."
+   },
+   {
+    "qid": "Q56026072",
+    "label": "Gukesh D",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q26703041",
+    "label": "Praggnanandhaa",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q99732629",
+    "label": "Samay Raina",
+    "fit": 72,
+    "why": "Chess player: you follow chess."
+   }
+  ],
+  "chess|BR": [
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "fit": 92,
+    "why": "Chess player: you follow chess."
+   },
+   {
+    "qid": "Q705525",
+    "label": "Peter Thiel",
+    "fit": 65,
+    "why": "Sport: chess, which you follow."
+   }
+  ],
+  "birdwatching|US": [
+   {
+    "qid": "Q177856",
+    "label": "Griffon Vulture",
+    "fit": 75,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q8021345",
+    "label": "owl",
+    "fit": 67,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q43794",
+    "label": "Meleagris",
+    "fit": 65,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q5113",
+    "label": "bird",
+    "fit": 80,
+    "why": "This is the topic you follow: bird."
+   },
+   {
+    "qid": "Q2086368",
+    "label": "Pelagornis",
+    "fit": 53,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q93208",
+    "label": "Emu",
+    "fit": 78,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q1137288",
+    "label": "Blakiston`s Eagle Owl",
+    "fit": 60,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q8154335",
+    "label": "Alcedinidae",
+    "fit": 58,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q503804",
+    "label": "Grus canadensis",
+    "fit": 60,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q3736439",
+    "label": "duck",
+    "fit": 67,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q457471",
+    "label": "Red-tailed Hawk",
+    "fit": 67,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q2092297",
+    "label": "eagle",
+    "fit": 67,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q201251",
+    "label": "peafowl",
+    "fit": 67,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q123120",
+    "label": "vulture",
+    "fit": 67,
+    "why": "A kind of bird, which you follow."
+   },
+   {
+    "qid": "Q126167",
+    "label": "bearded vulture",
+    "fit": 67,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q27074911",
+    "label": "Downy Woodpecker",
+    "fit": 50,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q43642",
+    "label": "Apteryx",
+    "fit": 65,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q2576337",
+    "label": "Struthio",
+    "fit": 65,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q223359",
+    "label": "Rio",
+    "fit": 64,
+    "why": "About bird, which you follow."
+   },
+   {
+    "qid": "Q26844",
+    "label": "Wild Turkey",
+    "fit": 62,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   }
+  ],
+  "birdwatching|IN": [
+   {
+    "qid": "Q477133",
+    "label": "Indian Roller",
+    "fit": 55,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q29564928",
+    "label": "Cygnus",
+    "fit": 55,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   }
+  ],
+  "birdwatching|BR": [
+   {
+    "qid": "Q1071983",
+    "label": "Penelope",
+    "fit": 65,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   },
+   {
+    "qid": "Q43502",
+    "label": "Dodo",
+    "fit": 53,
+    "why": "Belongs to the group bird (taxon), which you follow."
+   }
+  ],
+  "sourdough|US": [
+   {
+    "qid": "Q3634389",
+    "label": "Baati",
+    "fit": 67,
+    "why": "A kind of bread, which you follow."
+   },
+   {
+    "qid": "Q8031737",
+    "label": "Wonder Bread",
+    "fit": 72,
+    "why": "A kind of bread, which you follow."
+   },
+   {
+    "qid": "Q3360560",
+    "label": "sourdough bread",
+    "fit": 97,
+    "why": "This is the topic you follow: sourdough bread."
+   },
+   {
+    "qid": "Q2446322",
+    "label": "knish",
+    "fit": 67,
+    "why": "A kind of bread, which you follow."
+   },
+   {
+    "qid": "Q7214426",
+    "label": "frybread",
+    "fit": 61,
+    "why": "A kind of bread, which you follow."
+   },
+   {
+    "qid": "Q1142029",
+    "label": "crumpet",
+    "fit": 61,
+    "why": "A kind of bread, which you follow."
+   },
+   {
+    "qid": "Q207104",
+    "label": "sacramental bread",
+    "fit": 61,
+    "why": "Use of bread: you follow bread."
+   },
+   {
+    "qid": "Q7802",
+    "label": "bread",
+    "fit": 80,
+    "why": "This is the topic you follow: bread."
+   },
+   {
+    "qid": "Q836891",
+    "label": "hardtack",
+    "fit": 67,
+    "why": "A kind of bread, which you follow."
+   }
+  ],
+  "sourdough|IN": [
+   {
+    "qid": "Q5477096",
+    "label": "rusk",
+    "fit": 67,
+    "why": "A kind of bread, which you follow."
+   }
+  ],
+  "sourdough|BR": []
+ }
+}

@@ -32,7 +32,8 @@ def fingerprint(data: Path) -> str:
     """Hash of the data dir path and the bytes of every file the page is built from. Content, not mtimes: a checkout,
     a rebase or a restored file can leave dist/ newer than data it does not hold."""
     h = hashlib.sha256(str(data).encode())
-    for p in [HERE / "trending.css", HERE / "trending.js", HERE / "build.py", build.SITE_DIR / "static" / "favicon.svg"] + build.data_files(data):
+    modules = [HERE / f for f in ("match.js", "profile.js", "niche.js")]
+    for p in [HERE / "trending.css", HERE / "trending.js", HERE / "build.py", build.SITE_DIR / "static" / "favicon.svg"] + modules + build.data_files(data) + sorted((data / "match").glob("*.json")):
         h.update(p.name.encode())
         h.update(p.read_bytes() if p.exists() else b"-")
     return h.hexdigest()

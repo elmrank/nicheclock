@@ -1,4 +1,4 @@
-"""``python -m nicheclock.catalog build|resolve|verify-map``: the daily catalog build and its tools."""
+"""``python -m nicheclock.catalog build|match|resolve|verify-map``: the daily catalog build and its tools."""
 
 from __future__ import annotations
 
@@ -306,9 +306,14 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify-map", help="check that the category_map.yaml QIDs exist on Wikidata")
     v.add_argument("--labels", action="store_true", help="print each rule with its live label")
     sub.add_parser("map", help="print category_map.yaml as a table with live labels")
+    from nicheclock.catalog.match_cmd import add_parser
+
+    add_parser(sub)
     a = p.parse_args(argv)
     a.state = str(Path(a.state).expanduser())
-    return {"build": cmd_build, "resolve": cmd_resolve, "verify-map": cmd_verify_map, "map": cmd_map}[a.cmd](a)
+    from nicheclock.catalog.match_cmd import cmd_match
+
+    return {"build": cmd_build, "resolve": cmd_resolve, "verify-map": cmd_verify_map, "map": cmd_map, "match": cmd_match}[a.cmd](a)
 
 
 if __name__ == "__main__":

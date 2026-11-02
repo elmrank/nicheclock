@@ -21,7 +21,7 @@ LAG_DAYS = {
     "film release": 14, "game release": 14, "album release": 7, "single release": 7, "book release": 14,
     "software release": 14, "tv premiere": 14, "release": 14,
     "sports event": 7, "election": 21, "festival": 28, "award ceremony": 14, "space mission": 14,
-    "holiday": 28, "comment deadline": 14, "effective date": 21, "event": 14,
+    "holiday": 28, "observance": 28, "comment deadline": 14, "effective date": 21, "event": 14,
 }
 HORIZON_DAYS = 365
 MIN_SITELINKS = 6
