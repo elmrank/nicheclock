@@ -53,7 +53,7 @@ def event_handles(w: pool.Walk, df: Counter, n: int, rising: bool = False) -> di
     return {"h": pool.select_handles(w, df, n), "f": pool.flags_of(w, rising)}
 
 
-def annotate_events(out: Path, store: EntityStore, fetcher: BulkFetcher, rt: Any, df_all: Counter, n_all: int, today: date,
+def annotate_events(out: Path, mdir: Path, store: EntityStore, fetcher: BulkFetcher, rt: Any, df_all: Counter, n_all: int, today: date,
                     user_agent: str, contact: str, log: Any) -> dict[str, Any]:
     """Put ``niche`` handles on every Wikidata event of upcoming.json and write observances.json (the yearly observances that have a handle)."""
     path = out / "upcoming.json"
@@ -104,7 +104,7 @@ def annotate_events(out: Path, store: EntityStore, fetcher: BulkFetcher, rt: Any
     _write(path, doc)
     if statements is None:
         return stats
-    _write(out / "match" / "observances.json", {
+    _write(mdir / "observances.json", {
         "schema": 1, "today": today.isoformat(), "kind": "observance", "lag_days": lag_for("observance"), "source": "wikidata", "license": WD_LICENSE,
         "recurrence": "yearly rule (Wikidata P837)", "row": "[qid, title, date, rule, sitelinks, category, handles, flags]", "rows": rows})
     return stats
@@ -145,7 +145,7 @@ def cmd_match(a: argparse.Namespace) -> int:
     log = lambda m: print(m, flush=True)
     started = time.monotonic()
     out = Path(a.out)
-    mdir = out / "match"
+    mdir = Path(a.match_out) if a.match_out else out / "match"
     state = Path(a.state)
     store = EntityStore(state / "match-entities.sqlite")
     log(f"entity store: {store.load()} fresh records")
@@ -203,7 +203,7 @@ def cmd_match(a: argparse.Namespace) -> int:
         manifest["regions"][iso] = {"file": f"match/pool-{iso}.json", **stats}
         log(f"{iso}: wrote {len(rows)} rows, {size / 1e6:.2f} MB gzip (budget {stats['budget_gzip_bytes'] / 1e6:.1f} MB)")
     try:
-        manifest["events"] = annotate_events(out, store, fetcher, rt, df_all, n_all, today, ident.user_agent, ident.contact_email, log)
+        manifest["events"] = annotate_events(out, mdir, store, fetcher, rt, df_all, n_all, today, ident.user_agent, ident.contact_email, log)
         log(f"events: {manifest['events']}")
     except Throttled as e:
         log(f"events skipped: {e}")
@@ -238,6 +238,8 @@ def cmd_match(a: argparse.Namespace) -> int:
 
 def add_parser(sub: Any) -> None:
     m = sub.add_parser("match", help="niche pool, concept index and event handles (needs `build` first)")
-    m.add_argument("--out", default="hosted/site/catalog-data")
+    m.add_argument("--out", default="hosted/site/catalog-data", help="the catalog data dir: trending-*.json are read, upcoming.json gets the event handles")
+    m.add_argument("--match-out", help="where the big niche files (pool, concepts, bridges, observances, manifest) are written; default <out>/match. "
+                   "The daily job uses a git-ignored dir and deploy-site.sh copies it into the build (they are not committed)")
     m.add_argument("--regions", nargs="+", choices=list(REGIONS), help="country pools to build (default: all four)")
     m.add_argument("--today", help="YYYY-MM-DD (default: today, UTC)")

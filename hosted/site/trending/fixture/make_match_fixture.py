@@ -18,7 +18,7 @@ SAMPLES = {718, 103632, 685629, 5113, 904889, 3360560, 7802}
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--from", dest="src", type=Path, default=HERE.parents[1] / "catalog-data" / "match")
+    ap.add_argument("--from", dest="src", type=Path, default=Path.home() / ".nicheclock-catalog" / "match", help="the dir `catalog match --match-out` wrote")
     a = ap.parse_args()
     out = HERE / "match"
     out.mkdir(exist_ok=True)

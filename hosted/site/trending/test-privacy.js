@@ -97,7 +97,18 @@ const matchRequests = () => timeline.filter((t) => /\/catalog-data\/match\//.tes
 const failures = [];
 const check = (name, fn) => { try { fn(); console.log("ok  " + name); } catch (e) { failures.push(name + ": " + e.message); console.log("FAIL " + name + ": " + e.message); } };
 
+let racePassed = false;
 try {
+  step("race: click Your niche while the data files are still loading");
+  const rp = await browser.newPage();
+  await rp.setRequestInterception(true);
+  rp.on("request", (r) => { if (/catalog-data\/meta\.json/.test(r.url())) setTimeout(() => r.continue(), 1500); else r.continue(); });
+  await rp.goto(ORIGIN + "/", { waitUntil: "domcontentloaded" });
+  await rp.waitForSelector("#nichebtn");                 // the bar is static HTML: a fast clicker can use it before any data file arrives
+  await rp.click("#nichebtn");
+  racePassed = await rp.waitForSelector("#topic", { timeout: 15000 }).then(() => true, () => false);
+  await rp.close();
+
   step("load the page (no niche opened)");
   await page.goto(ORIGIN + "/#/trending", { waitUntil: "networkidle0" });
   await page.waitForSelector("table.trend");
@@ -161,6 +172,7 @@ try {
   /* ---- assertions ---- */
   const all = Array.from(entries.values());
   const blob = (en) => JSON.stringify([en.request.url, en.request.headers, en.extra || [], en.request.postData || ""]).toLowerCase();
+  check("a click on Your niche before the data files have loaded still opens the profile page (hash route vs. app ready)", () => { assert.ok(racePassed); });
   check("before the niche is opened: no pool, no concept file, no niche module", () => { assert.equal(before.pool, 0); assert.deepEqual(before.match, []); assert.equal(before.niche, false); });
   check("the profile page fetches the topic list but no pool", () => { assert.equal(afterProfile.pool, 0); assert.ok(afterProfile.match.some((n) => /^concepts\./.test(n))); });
   check("saving fetches exactly one pool (the profile's country)", () => { assert.equal(afterSave.pool, 1); });

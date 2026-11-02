@@ -224,7 +224,7 @@ read this file. Worldwide rows of `trending.json` also carry the rising repos as
 
 ## match/ (the niche pool for "Your niche")
 
-Written by `python -m nicheclock.catalog match` after `build` (see docs/personalization.md). Not read by the Worker; the page fetches a pool
+Written by `python -m nicheclock.catalog match --match-out DIR` after `build` (see docs/personalization.md), by default into `catalog-data/match/`. The daily job writes them to `~/.nicheclock-catalog/match`; they are git-ignored and `deploy-site.sh` copies them into the build. Not read by the Worker; the page fetches a pool
 only when "Your niche" or "For your niche" is opened. All files are compact JSON.
 
 ```

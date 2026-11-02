@@ -20,3 +20,6 @@ hosted/site/catalog-data/*.json
 node_modules/
 .wrangler/
 .dev.vars
+
+# niche files of "Your niche": written by `catalog match --match-out`, never committed
+hosted/site/catalog-data/match/

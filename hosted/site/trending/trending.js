@@ -915,9 +915,10 @@
       data = { meta: r[0], topics: r[1].topics || [], events: r[2].events || [], byRegion: { global: r[1].topics || [] }, yt: { global: r[4] }, gh: r[3] && Array.isArray(r[3].repos) ? r[3] : null };
       mergeYouTube(data.topics, r[4]);
       if (r[1].sample || r[0].sample) data.meta.sample = true;
+      state = parseHash(location.hash);       // a click on "Your niche" while the files were still loading changed the hash; its hashchange had nothing to render
       render();
     }).catch((e) => fail(String(e && e.message || e)));
   }
-  window.addEventListener("hashchange", () => { if (data) { state = parseHash(location.hash); render(); } });
+  window.addEventListener("hashchange", () => { state = parseHash(location.hash); if (data) render(); });
   load();
 })();
