@@ -2,6 +2,8 @@
 
 **Status: nháp, chờ user duyệt.** Draft written 2026-11-01 and built against without waiting for sign-off. Internal design note, not a published doc (no front matter, so `docs/` tests and `build.py` skip it).
 
+**Update 2 Nov 2026:** the look (type, colour, layout, filters, header, intro video) follows `docs/ui-redesign-linear-style.md`, not Google Trends. Criteria 1-7 and 9-11 (what a row shows, honest units, filters work and live in the URL, evidence, the privacy proof) still hold. Of criterion 8, only the contrast, keyboard, no-horizontal-scroll and no-outside-request parts still apply; the font and colour clause is replaced (one face Google Sans Flex, Roboto removed, accent `#0B57D0`). The Region and Sort "selects" are now menu buttons with popovers; density is now 48 px rows.
+
 The hosted homepage is a multi-source "Trending now" table in the style of Google Trends, plus an Upcoming tab. This file says what "done" means, as checks anyone can run.
 
 ## References

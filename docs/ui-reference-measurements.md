@@ -1,5 +1,7 @@
 # Trending now: fonts and colours taken from Google Trends
 
+> **Superseded on 2 Nov 2026 for fonts, colours and layout** by `docs/ui-redesign-linear-style.md` (Linear / Vercel dense-table reference, one face: Google Sans Flex; Roboto removed). The Google Trends measurements below stay as the record of the first version.
+
 Rule from the user (01/11): do not pick fonts or colours. Copy them from a real reference product, record the measured values, and use exactly one accent besides black, white and grey. This page is the evidence.
 
 **Reference:** Google Trends, "Trending now" (`https://trends.google.com/trending?geo=US&hours=168`), the product the user compares against. Opened once in a headless Chromium on **2026-11-01**; read computed CSS only (no content copied or stored). Why this reference: the user asked for "the Google Trends UI", and it is the only one of the candidates (Exploding Topics, Glimpse, Treendly, SparkToro, Similarweb, AnswerThePublic) whose table layout we follow.

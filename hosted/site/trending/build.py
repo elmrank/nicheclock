@@ -33,8 +33,7 @@ TITLE = "nicheclock: rising topics and when to publish them"
 DESC = ("Rising topics from Wikipedia, news and community channels, upcoming events with a publish-by date, "
         "and a table that keeps each volume in its own unit.")
 TAGLINE = "Rising topics, dated events, and when to publish."
-SUBLINE = ("nicheclock follows what is rising on Wikipedia, news and community channels and gives each upcoming event a publish-by date. "
-           "The web table is for reading; AI agents get niche trends and events over MCP, which runs locally from the repository.")
+SUBLINE = "Rising on Wikipedia, news and community channels, with a publish-by date for each event. Agents use it over MCP, run locally."
 
 # Sources kept off the live site until their terms are re-read. Matched against a channel's key, its `source`, an
 # evidence item's `source` and the ids in meta.json. "github" is the stars/day channel and the GitHub rank tab.
@@ -156,7 +155,7 @@ def stage(out: Path, data: Path) -> dict[str, str]:
     assets.mkdir(parents=True, exist_ok=True)
     names: dict[str, str] = {}
     css = (HERE / "trending.css").read_bytes()
-    for fname in ("roboto.woff2", "google-sans-flex.woff2"):      # OFL fonts measured on Google Trends, self-hosted
+    for fname in ("google-sans-flex.woff2",):      # the one UI face, OFL, self-hosted; its hashed name is also preloaded by index_html
         blob = (HERE / "fonts" / fname).read_bytes()
         names[fname] = _hashed(blob, fname)
         (assets / names[fname]).write_bytes(blob)
@@ -178,8 +177,7 @@ def stage(out: Path, data: Path) -> dict[str, str]:
         niche = niche.replace(f'"./{mod}.js"', f'"./{names[mod]}"')
     names["niche"] = _hashed(niche.encode("utf-8"), "niche.js")
     (assets / names["niche"]).write_text(niche, encoding="utf-8")
-    for lic in ("OFL-Roboto.txt", "OFL-Google-Sans-Flex.txt"):
-        shutil.copy(HERE / "fonts" / lic, assets / lic)
+    shutil.copy(HERE / "fonts" / "OFL-Google-Sans-Flex.txt", assets / "OFL-Google-Sans-Flex.txt")
     dest = out / "catalog-data"
     if dest.exists():
         shutil.rmtree(dest)
@@ -196,6 +194,9 @@ def stage(out: Path, data: Path) -> dict[str, str]:
             shutil.copy(f, dest / f.name)
     return names
 
+
+CLOCK_MARK = ('<svg class="mark" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">'
+              '<circle cx="12" cy="12" r="9.5"/><path d="M12 6v6.2l3.8 2.3" stroke-linecap="square"/></svg>')
 
 PRERENDER_ROWS = 20
 PRERENDER_EVENTS = 10
@@ -295,15 +296,14 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         f'<meta property="og:title" content="{e(TITLE)}"><meta property="og:description" content="{e(DESC)}">'
         f'<meta property="og:url" content="{e(canonical)}"><meta name="twitter:card" content="summary">\n'
         f'<script type="application/ld+json">{ld}</script>\n'
+        f'<link rel="preload" href="/assets/{names["google-sans-flex.woff2"]}" as="font" type="font/woff2" crossorigin>\n'
         f'<link rel="stylesheet" href="/assets/{names["css"]}">\n<script src="/assets/{names["js"]}" defer></script>\n'
         + (f'<script src="/assets/{beacon}" defer></script>\n' if beacon else "")
-        + '</head>\n<body>\n'
-        '<header class="bar"><div><strong class="brand">nicheclock</strong>'
+        + '</head>\n<body>\n<a class="skip" href="#app">Skip to the table</a>\n'
+        f'<header class="bar"><div class="bar-in"><a class="brand" href="/">{CLOCK_MARK}<span>nicheclock</span></a>'
         '<nav class="bar-links" aria-label="Documentation"><a class="mybtn" id="nichebtn" href="#/niche">Your niche</a><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a></nav></div></header>\n'
-        f'<section class="hero"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p>'
-        '<p class="dim small">The local MCP server speaks stdio. There is no hosted API and no API key sign-up yet, '
-        'and the Trending now table below is not available through MCP or an API yet.</p></section>\n'
-        f'<main id="app" aria-live="polite" data-src="/catalog-data/" data-niche="/assets/{names["niche"]}" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
+        f'<section class="hero"><div class="hero-in"><div class="hero-text"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p></div></div></section>\n'
+        f'<main id="app" tabindex="-1" aria-live="polite" data-src="/catalog-data/" data-niche="/assets/{names["niche"]}" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
         + (prerender if prerender else '<p class="state">Loading data…</p>') + '\n'
         '<noscript><p class="state">The interactive table needs JavaScript. The data is plain JSON: <a href="/catalog-data/trending.json">/catalog-data/trending.json</a>.</p></noscript>\n</main>\n'
         '<section class="about" id="about"><h2>What nicheclock is</h2>'
@@ -316,6 +316,8 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         '<h2>What it is not</h2>'
         '<p>It is not search volume and it does not replace Google Trends or a keyword tool. A Wikipedia reader count, a news article count and a Hacker News point total are different things, '
         'so the table never adds them together. Country lists for small countries are thin and say so.</p>'
+        '<h2>MCP and API</h2>'
+        '<p>The local MCP server speaks stdio. There is no hosted API and no API key sign-up yet, and the Trending now table above is not available through MCP or an API yet.</p>'
         f'<p class="dim small">{repo_note} <a href="/docs/limitations/">What it does not do yet</a>.</p></section>\n'
         '<footer id="foot"><div id="foot-sources"></div><p>nicheclock is free software under AGPL-3.0. '
         '<a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></p></footer>\n</body>\n</html>\n'

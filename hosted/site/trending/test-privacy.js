@@ -62,7 +62,9 @@ const server = http.createServer((req, res) => {
   });
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const ORIGIN = "http://127.0.0.1:" + server.address().port;
+/* --live URL runs the same flow against a deployed site instead of the local build (the "server saw" checks then see no local server traffic) */
+const argLive = process.argv.indexOf("--live");
+const ORIGIN = argLive > 0 ? process.argv[argLive + 1].replace(/\/$/, "") : "http://127.0.0.1:" + server.address().port;
 
 const browser = await puppeteer.launch({ executablePath: chromePath(), headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
 const page = await browser.newPage();
@@ -148,8 +150,11 @@ try {
   await new Promise((r) => setTimeout(r, 500));
   await page.evaluate(() => { [...document.querySelectorAll('button[role="tab"]')].find((b) => /Trending/.test(b.textContent)).click(); });
   await page.waitForSelector("tr.fitrow", { timeout: 20000 });
-  const regions = await page.evaluate(() => [...document.querySelectorAll('select[aria-label="Region"] option')].map((o) => o.value));
-  if (regions.indexOf("IN") >= 0) { await page.select('select[aria-label="Region"]', "IN"); await page.waitForSelector(".mine"); await new Promise((r) => setTimeout(r, 800)); }
+  await page.click('[data-fk="m-region"]');                       // the Region control is a menu button with a listbox popover
+  await page.waitForSelector('.pop [role="option"]');
+  const regions = await page.evaluate(() => [...document.querySelectorAll('.pop [role="option"]')].map((o) => o.getAttribute("data-v")));
+  if (regions.indexOf("IN") >= 0) { await page.click('.pop [role="option"][data-v="IN"]'); await page.waitForSelector(".mine"); await new Promise((r) => setTimeout(r, 800)); }
+  else await page.keyboard.press("Escape");
 
   step("export, reload, import, delete");
   await page.click("#nichebtn");
