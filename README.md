@@ -2,6 +2,10 @@
 
 Rising topics, dated events, and when to publish.
 
+[![A silent 14-second loop of the nicheclock intro video: the Trending now table with one unit per volume, filters by country and category, and Upcoming events with publish-by dates](docs/media/nicheclock-intro-readme.gif)](https://nicheclock.elmrank.com/video/nicheclock-intro.mp4)
+
+*A loop from the 74-second intro video, silent with captions on screen. Click it for the full video. The tables are the Trending now and Upcoming pages of nicheclock.elmrank.com, captured on 2 Nov 2026.*
+
 nicheclock is a self-hosted trend radar for SEOs who work with AI. It watches signals that tend to move before keyword volume does, such as Wikipedia pageviews, news volume, Hacker News and event calendars, lists the topics that have started to rise, and gives every dated event a publish-by date. Use it next to your keyword research. The MCP server runs locally from this repository.
 
 ![A nicheclock HTML report built from the test fixtures: a ranked feed and an Upcoming table with publish-by dates](docs/img/report.png)
