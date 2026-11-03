@@ -110,12 +110,13 @@ Limits per key: 1,000 requests a day (UTC) and 60 a minute. Each person can hold
 
 ### Hosted tools
 
-Five read-only tools, with no setup beyond the key. The first two read the same public catalog as the Trending now and Upcoming tabs of the website, updated once a day. The other three match a profile you pass in the call.
+Six read-only tools, with no setup beyond the key. The first two read the same public catalog as the Trending now and Upcoming tabs of the website, updated once a day. `search_updates` reads the Google Search updates page. The other three match a profile you pass in the call.
 
 | Tool | Arguments | Returns |
 |---|---|---|
 | `trending_now` | `region='global'`, `category`, `window='7d'`, `state='rising'`, `limit=20` | The topics rising now: label, Wikidata id, rise, volume with its unit, state, sources, category, a one-line reason and a link. |
 | `upcoming_events` | `region='global'`, `days=30`, `limit=20`, `kind` | Dated events soonest first, with the date to publish by, days left, source link and licence. |
+| `search_updates` | `since`, `kind`, `limit=20` | Whether a Google core or spam update is rolling out now, and a list of ranking updates, Search and Crawling documentation changes and Search Central blog posts, newest first. |
 | `trends_for_profile` | `profile`, `limit`, `min_fit` | Rising Wikipedia pages that fit the topics in a profile, each with a fit score, the reason and its unit. |
 | `upcoming_for_profile` | `profile`, `days`, `limit` | Dated events and yearly observances that fit the profile, with the date to publish by. |
 | `resolve_topic` | `text` | The Wikidata id of a word, which a profile topic needs. |
@@ -204,6 +205,51 @@ Ask: "Which film releases in the next month have a publish-by date I can still m
       "license": "CC0 (Wikidata)"
     }
   ]
+}
+```
+
+#### `search_updates`
+
+Ask: "Is a Google core update rolling out right now, and what did Google change in its Search documentation this month?" `rolling_now` is true while a core or spam update has started and Google has published no end date; `rolling_name` and `rolling_started` say which. `kind` is `ranking` (the updates of the last 12 months, each with `status` `started` while it rolls and `ended` after, the end date and the duration in days), `docs` (Search and Crawling documentation changes) or `blog` (Search Central blog posts). `since` is a date, `YYYY-MM-DD`; a ranking update counts when it started, ended or is still rolling on or after it. `data_date` is the day the Google Search Status Dashboard was last read, and `stale` is true when that is three days old or more. Summaries are Google's own wording, shortened, under the licence in `attribution`. The same data is on [the page](https://nicheclock.elmrank.com/google-updates/).
+
+```json
+{"since": "2026-09-01", "limit": 2}
+```
+
+```json
+{
+  "rolling_now": false,
+  "rolling_name": null,
+  "rolling_started": null,
+  "rolling": [],
+  "rolling_note": "rolling_now is true while a core or spam update has started and Google has published no end date. Other ranking updates are listed with status started or ended.",
+  "data_date": "2026-11-03",
+  "stale": false,
+  "since": "2026-09-01",
+  "kind": null,
+  "matching": 14,
+  "items": [
+    {
+      "date": "2026-10-30",
+      "kind": "blog",
+      "category": "Crawling",
+      "title": "Supporting a shared AI training control for websites",
+      "url": "https://developers.google.com/search/blog/2026/10/ai-training-control",
+      "summary": "Today, we're announcing our plans to support a shared AI training control in robots.txt."
+    },
+    {
+      "date": "2026-09-24",
+      "kind": "ranking",
+      "category": "Spam update",
+      "title": "September 2026 spam update",
+      "url": "https://status.search.google.com/incidents/XhUDXP7A67iHCD2kmbVu",
+      "summary": "Rollout started on 2026-09-24 and ended on 2026-10-08, after 14 days.",
+      "status": "ended",
+      "ended": "2026-10-08",
+      "duration_days": 14
+    }
+  ],
+  "attribution": "Source: Google Search Central, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Summaries are Google's own wording, shortened; the title links to the original page. Ranking update names, dates and links come from the Google Search Status Dashboard (https://status.search.google.com/)."
 }
 ```
 
@@ -348,4 +394,4 @@ curl -s https://nicheclock.elmrank.com/mcp \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
 ```
 
-A reply with the five tools means the key works. Clients that can only connect without a header or through OAuth, such as the connector screens of some chat apps, cannot use the hosted server today. Revoke a key that leaks on the key page and create another.
+A reply with the six tools means the key works. Clients that can only connect without a header or through OAuth, such as the connector screens of some chat apps, cannot use the hosted server today. Revoke a key that leaks on the key page and create another.

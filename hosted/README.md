@@ -82,10 +82,19 @@ validated (`400 -32020`), `server/discover`, `UnsupportedProtocolVersion` (`-320
 (`ALLOWED_ORIGINS` adds more). Responses are plain `application/json`, never SSE.
 
 Tools for public keys: `trending_now(region='global', category?, window='7d', state='rising'|'all', limit=20)` and
-`upcoming_events(region='global', days=30, limit=20, kind?)` (`src/catalog-tools.ts`), plus the profile tools below. They read
+`upcoming_events(region='global', days=30, limit=20, kind?)` (`src/catalog-tools.ts`), `search_updates(since?, kind?, limit=20)`
+(`src/updates-tool.ts`, below), plus the profile tools below. The first two read
 per-region digests of the PUBLISHED catalog, `catalog-data/tools/` (`nicheclock/catalog/digest.py`, cut by `site/trending/build.py`
 from the files the site serves, so a tool never shows what the page hides); the events are one file per month. The CPU cost is
 about 1 ms of JSON for one region. `gsc_gaps` is not offered: no user GSC data on the hosted side.
+
+`search_updates` reads one file, `catalog-data/google-updates.json` (about 50 KB, parsed once per isolate), the same file
+`/google-updates/` is built from. `kind` is `ranking` (Search Status Dashboard core, spam and Discover updates of the last 12 months,
+`status` `started` or `ended`), `docs` (Search and Crawling documentation changes) or `blog` (Search Central); `since` is a date.
+The answer has `rolling_now`, `rolling_name`, `rolling_started` (core or spam update started with no end date), `data_date`, `stale`
+(data 3 days old or more) and `attribution` (Google Search Central, CC BY 4.0). Same key, quota and metering as the other tools.
+The file is the sanitised export of the operator's watcher (`export_public.py`), copied into the build by `scripts/deploy-site.sh`;
+`site/google_updates.py` refuses any field outside its allow-list, so an internal field cannot reach the page or the tool.
 
 Niche tools: `trends_for_niche(niche, days=7, region?)`, `upcoming(niche, days=30, region?)`, `niche_from_url(url)` and the REST
 `/v1/niches`, `/v1/evidence`, `/v1/jobs` are kept for internal and admin keys only (the operator's pilot niches under

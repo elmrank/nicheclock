@@ -23,3 +23,4 @@ node_modules/
 
 # niche files of "Your niche": written by `catalog match --match-out`, never committed
 hosted/site/catalog-data/match/
+hosted/site/catalog-data/google-updates.json

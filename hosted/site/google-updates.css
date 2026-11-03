@@ -1,0 +1,95 @@
+/* /google-updates/: loaded after trending.css (tokens, top bar, intro, footer, .tablewrap). Same rules: 1 px hairlines, 12 / 13 / 14 / 16 type,
+   tabular figures, neutral greys, one accent (the core update bar and the "rolling" state). No script on this page. */
+#gu { max-width: var(--wrap); margin: 0 auto; padding: 1rem var(--gutter) 1rem; outline: none; }
+#gu section { margin-top: 2rem; }
+#gu section:first-child { margin-top: 0; }
+#gu h2 { font: 600 1rem/1.5rem var(--font); letter-spacing: -0.006em; }
+.gu-note { margin-top: 0.125rem; margin-bottom: 0.5rem; color: var(--ink2); max-width: 56rem; text-wrap: pretty; }
+
+/* the answer */
+#gu .gu-banner { padding: 1rem 1.25rem 1.125rem; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+#gu .gu-banner.rolling { background: var(--accent-soft); border-color: var(--accent); }
+.gu-banner h2 { font: 500 0.8125rem/1.25rem var(--font); color: var(--ink3); letter-spacing: 0; }
+.gu-answer { margin-top: 0.25rem; }
+.gu-flag { font: 600 2rem/2.5rem var(--font); letter-spacing: -0.02em; color: var(--ink); }
+.yes .gu-flag { color: var(--accent); }
+.gu-detail { margin-top: 0.125rem; max-width: 56rem; font-size: 0.9375rem; line-height: 1.5rem; color: var(--ink); text-wrap: pretty; }
+.gu-detail + .gu-detail { margin-top: 0.5rem; }
+.gu-meta { margin-top: 0.75rem; font-size: 0.75rem; line-height: 1rem; color: var(--ink3); max-width: 56rem; }
+.gu-stale { display: block; margin-top: 0.25rem; color: var(--urgent); }
+
+/* tables */
+.gu-table { table-layout: fixed; }
+.gu-table > thead > tr > th { height: 2.25rem; padding: 0 0.75rem; background: var(--surface2); border-bottom: 1px solid var(--line); font: 500 0.75rem/1rem var(--font); color: var(--ink3); white-space: nowrap; overflow: hidden; }
+.gu-table > thead > tr > th:first-child, .gu-table > tbody > tr > :first-child { padding-left: 1rem; }
+.gu-table > thead > tr > th:last-child, .gu-table > tbody > tr > :last-child { padding-right: 1rem; }
+.gu-table > tbody > tr > * { border-bottom: 1px solid var(--line); }
+.gu-table > tbody > tr:last-child > * { border-bottom: 0; }
+.gu-table a { color: var(--ink); text-decoration-color: var(--line2); text-underline-offset: 0.2em; }
+.gu-table a:hover { color: var(--accent); text-decoration-color: currentColor; }
+
+.gu-rank > tbody > tr > * { height: 3rem; padding: 0 0.75rem; font-size: 0.8125rem; }
+.gu-rank > tbody > tr > th { font: 500 0.875rem/1.25rem var(--font); }
+.gu-rank .c-d { width: 7.5rem; }
+.gu-rank .c-dur { width: 6rem; }
+.gu-rank .gu-tl { width: 26rem; }
+.gu-rank > tbody > tr > td { color: var(--ink2); }
+.gu-open { color: var(--accent); font-weight: 600; }
+.gu-tl { padding-top: 0; padding-bottom: 0; }
+.gu-axis { display: block; width: 100%; height: auto; }
+.gu-axis text { fill: var(--ink3); font: 500 9px var(--font); }
+.gu-bar { display: block; width: 100%; height: 10px; }
+.gu-bar .grid path { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.gu-bar rect { fill: var(--ink3); }
+.gu-bar.core rect { fill: var(--accent); }
+.gu-bar.spam rect { fill: var(--ink2); }
+.gu-bar.discover rect, .gu-bar.other rect { fill: var(--ink3); opacity: 0.55; }
+
+.gu-list > tbody > tr > td { padding: 0.625rem 0.75rem; vertical-align: top; }
+.gu-list .c-d { width: 7.5rem; }
+.gu-list .c-cat { width: 10rem; }
+.gu-list .c-kind { width: 5rem; }
+.gu-date, .gu-cat, .gu-kind { font-size: 0.8125rem; line-height: 1.25rem; color: var(--ink3); white-space: nowrap; }
+.gu-title { display: block; font: 500 0.875rem/1.25rem var(--font); overflow-wrap: anywhere; }
+.gu-sum { display: block; margin-top: 0.125rem; font-size: 0.8125rem; line-height: 1.25rem; color: var(--ink2); max-width: 52rem; text-wrap: pretty; }
+.gu-list tr.gu-month > th { height: 2rem; padding: 0 1rem; background: var(--surface2); border-bottom: 1px solid var(--line); font: 600 0.75rem/1rem var(--font); color: var(--ink2); font-variant-numeric: tabular-nums; }
+.gu-list tr.gu-month:first-child > th { border-top: 0; }
+
+.gu-attr p { margin-top: 0.5rem; max-width: 56rem; font-size: 0.8125rem; line-height: 1.25rem; color: var(--ink2); text-wrap: pretty; }
+.gu-attr code { font: 500 0.8125rem ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--surface2); padding: 0.0625rem 0.375rem; border-radius: 4px; }
+#foot { margin-top: 1.5rem; }
+
+@media print { .skip { display: none; } }
+
+@media (max-width: 70rem) {
+  .gu-rank .gu-tl { width: 18rem; }
+}
+@media (max-width: 56rem) {
+  .gu-rank .gu-tl { display: none; }
+}
+
+/* phone: the bar loses the links it hides on the home page, the timeline column goes (the dates say the same), every change becomes a short block */
+@media (max-width: 44rem) {
+  :root { --gutter: 1rem; }
+  .bar-links a { padding: 0 0.5rem; }
+  .bar-links a[href="/docs/mcp/"], .bar-links a[href="/docs/sources/"], .bar-links .ghlink span { display: none; }
+  .bar-links .ghlink { margin-left: 0; border-left: 0; }
+  .hero-in { padding-top: 1rem; }
+  #gu .gu-banner { padding: 0.875rem 1rem 1rem; }
+  .gu-flag { font-size: 1.75rem; line-height: 2.25rem; }
+  .gu-rank .c-d { width: 5.75rem; }
+  .gu-rank .c-dur { width: 4.75rem; }
+  .gu-rank > thead > tr > th, .gu-rank > tbody > tr > * { padding-left: 0.5rem; padding-right: 0.5rem; }
+  .gu-rank > tbody > tr > th { font-size: 0.8125rem; line-height: 1.125rem; white-space: normal; }
+  .gu-rank > tbody > tr > * { height: 3.25rem; font-size: 0.75rem; }
+  .gu-list, .gu-list > tbody, .gu-list > tbody > tr.gu-month, .gu-list > tbody > tr.gu-month > th { display: block; }
+  .gu-list > thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .gu-list > tbody > tr:not(.gu-month) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 0.75rem; padding: 0.625rem 1rem; border-bottom: 1px solid var(--line); }
+  .gu-list > tbody > tr:not(.gu-month) > * { padding: 0; border: 0; }
+  .gu-list > tbody > tr > .gu-date { grid-column: 1; grid-row: 1; }
+  .gu-list > tbody > tr > .gu-cat { grid-column: 2; grid-row: 1; overflow: hidden; text-overflow: ellipsis; }
+  .gu-list > tbody > tr > .gu-main { grid-column: 1 / -1; grid-row: 2; margin-top: 0.125rem; }
+  .gu-list > tbody > tr > .gu-kind { grid-column: 3; grid-row: 1; }
+  .gu-list > tbody > tr:last-child { border-bottom: 0; }
+  .gu-list > tbody > tr.gu-month > th { line-height: 2rem; padding: 0 1rem; }
+}

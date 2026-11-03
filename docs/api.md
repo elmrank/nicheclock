@@ -9,7 +9,7 @@ publish: true
 
 > **Status.** Open to everyone and free. Sign in with GitHub at `https://nicheclock.elmrank.com/keys` to get a key. The service has no uptime promise, and the limits may change; see the [terms](/terms/) and the [privacy page](/privacy/). Nothing here changes how the self-hosted version works.
 
-The hosted service has two parts. The [remote MCP server](mcp.md#hosted-server) is the main one: five read-only tools, with an example call and reply for each, that an agent can use without running anything. The REST API is small: the profile routes below and your keys. It serves public data only, and it needs no install.
+The hosted service has two parts. The [remote MCP server](mcp.md#hosted-server) is the main one: six read-only tools, with an example call and reply for each, that an agent can use without running anything. The REST API is small: the profile routes below and your keys. It serves public data only, and it needs no install.
 
 ## Self-hosted or hosted
 
@@ -47,12 +47,12 @@ Every request needs `Authorization: Bearer nk_...`. A request without a valid ke
 
 | Endpoint | Returns |
 |---|---|
-| `POST /mcp` | Remote MCP, same key: `trending_now`, `upcoming_events` and the three profile tools. See [MCP](mcp.md#hosted-server) for how to connect and for each tool's arguments and reply. |
+| `POST /mcp` | Remote MCP, same key: `trending_now`, `upcoming_events`, `search_updates` and the three profile tools. See [MCP](mcp.md#hosted-server) for how to connect and for each tool's arguments and reply. |
 | `POST /v1/profile/trends`, `/v1/profile/upcoming`, `/v1/profile/resolve` | The profile routes, below. |
 | `GET /v1/keys` | Your keys and those of the same GitHub account. |
 | `DELETE /v1/keys/{id}` | Revokes one of them. |
 
-`trending_now` and `upcoming_events` are MCP tools only; they have no REST route. Every item carries `source`, `source_url` and a `license` or `attribution`, so you can show where it came from. Keep the attribution when you display the data.
+`trending_now`, `upcoming_events` and `search_updates` are MCP tools only; they have no REST route. Every item carries `source`, `source_url` and a `license` or `attribution`, so you can show where it came from. Keep the attribution when you display the data.
 
 ## Example
 

@@ -98,13 +98,13 @@ describe("tools/list on the public server", () => {
   it("an external key sees the catalog tools and the profile tools, not the niche tools", async () => {
     const k = await mkKey("external");
     const names = (await json(await rpc(k.key, "tools/list"))).result.tools.map((t: { name: string }) => t.name);
-    expect(names).toEqual(["trending_now", "upcoming_events", "trends_for_profile", "upcoming_for_profile", "resolve_topic"]);
+    expect(names).toEqual(["trending_now", "upcoming_events", "search_updates", "trends_for_profile", "upcoming_for_profile", "resolve_topic"]);
   });
 
   it("an internal key still sees the niche tools, and they still answer", async () => {
     const k = await mkKey("internal");
     const names = (await json(await rpc(k.key, "tools/list"))).result.tools.map((t: { name: string }) => t.name);
-    expect(names).toEqual(["trending_now", "upcoming_events", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic"]);
+    expect(names).toEqual(["trending_now", "upcoming_events", "search_updates", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic"]);
     const r = await tool(k.key, "trends_for_niche", { niche: "none" });
     expect(r.isError).toBe(true);
     expect(r.text).toContain("Valid niche ids");

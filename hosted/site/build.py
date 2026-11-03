@@ -38,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # the report page
 from nicheclock.output import page as nc_page  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ghmark import github_link  # noqa: E402  (shared with site/trending/build.py)
+import google_updates  # noqa: E402  (the /google-updates/ page, site/google_updates.py)
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -313,6 +314,34 @@ def home_page(names: dict[str, str], path: str = "/") -> str:
         data_src="/demo-data/demo.json", stamp_fmt="Demo data, sample niches. Updated daily; last run {time} UTC.")
 
 
+def build_google_updates(out: Path, data_dir: Path, names: dict[str, str], repo_note: str, repo_url: str | None) -> None:
+    """/google-updates/ and /catalog-data/google-updates.json (read by the MCP tool search_updates), from data_dir/google-updates.json.
+    The file is written by the operator's watcher and copied in by deploy-site.sh; without it neither exists (the deploy script then refuses).
+    The page is noindex while its path is not in INDEXABLE, and it is never in the sitemap."""
+    src = data_dir / "google-updates.json"
+    if not src.is_file():
+        print(f"no {src.name} in {data_dir}: /google-updates/ not built", file=sys.stderr)
+        return
+    try:
+        data = google_updates.load(src)
+    except google_updates.DataError as err:
+        sys.exit(f"{src}: {err}")
+    shutil.copy(src, out / "catalog-data" / "google-updates.json")
+    import datetime as dt
+    names = {**names, "updates_css": google_updates.stage_css(out / "assets")}
+    page = google_updates.page_html(data, names, noindex=google_updates.PATH not in INDEXABLE, today=dt.datetime.now(dt.timezone.utc).date(),
+                                    bar_links=github_link(repo_url), repo_note=repo_note)
+    # the page checks of the docs (one h1, title and description length, no em or en dash in OUR prose); Google's titles in the tables are quotes and are not checked
+    body = re.sub(r"<table\b.*?</table>", "", page.split("<body>", 1)[1], flags=re.S)
+    problems = [f"google-updates: {m}" for m in check({"body": body, "title": google_updates.TITLE, "description": google_updates.DESC, "section": "docs"})
+                if " WARN " not in m and not m.startswith("WARN")]
+    if problems:
+        sys.exit("\n".join(problems))
+    target = out / "google-updates" / "index.html"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(page, encoding="utf-8")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--docs", type=Path, default=REPO / "docs")
@@ -413,6 +442,8 @@ def main() -> None:
         (out / "demo" / "index.html").write_text(home_page(app_names, "/demo/"), encoding="utf-8")
     else:
         (out / "index.html").write_text(home_page(app_names), encoding="utf-8")
+    if trending:
+        build_google_updates(out, args.catalog_data or trending.default_data(), {**trending_names, "beacon": names["b.js"]}, source_note(), REPO_URL if REPO_PUBLIC else None)
 
     home_lastmod = UPDATED
     if trending:   # the homepage changes when the catalog does

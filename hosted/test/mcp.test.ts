@@ -49,7 +49,7 @@ describe("MCP transport", () => {
     const k = await mkKey();
     const list = await json(await call("/mcp", { key: k.key, env: off, body: { jsonrpc: "2.0", id: 1, method: "tools/list" } }));
     expect(list.result.tools.map((t: { name: string }) => t.name)).not.toContain("github_rising");
-    expect(list.result.tools).toHaveLength(8);
+    expect(list.result.tools).toHaveLength(9);
     const called = await json(await call("/mcp", { key: k.key, env: off, body: { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "github_rising", arguments: {} } } }));
     expect(called.error.message).toContain("Unknown tool");
     expect((await call("/v1/github/rising", { key: k.key, env: off })).status).toBe(404);
@@ -101,7 +101,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result._meta["io.modelcontextprotocol/serverInfo"].name).toBe("nicheclock-hosted");
   });
 
-  it("tools/list returns the nine tools (all switches on) with schemas, in a stable order", async () => {
+  it("tools/list returns the ten tools (all switches on) with schemas, in a stable order", async () => {
     const k = await mkKey();
     const res = await modern(k.key, "tools/list");
     expect(res.status).toBe(200);
@@ -112,7 +112,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result.resultType).toBe("complete");
     expect(r.result.ttlMs).toBeGreaterThan(0);
     expect(r.result.cacheScope).toBeTruthy();
-    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
+    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "search_updates", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     for (const t of r.result.tools) {
       expect(t.inputSchema.type).toBe("object");
       expect(t.description.length).toBeGreaterThan(20);
@@ -239,7 +239,7 @@ describe("MCP earlier revisions (initialize handshake, still stateless)", () => 
     const k = await mkKey();
     const h = { "mcp-protocol-version": "2025-06-18" };
     const list = await json(await legacy(k.key, "tools/list", {}, h));
-    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
+    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "search_updates", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     expect(list.result.resultType).toBeUndefined();
     const call1 = await json(await legacy(k.key, "tools/call", { name: "trends_for_niche", arguments: { niche: "birdwatching" } }, h, 2));
     expect(call1.result.isError).toBe(false);

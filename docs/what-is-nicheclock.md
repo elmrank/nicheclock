@@ -26,11 +26,11 @@ The **Your niche** link in the top bar of the website is optional and needs no a
 
 | You are | Use | Start at |
 |---|---|---|
-| AI agents, or an assistant such as Claude Code or Cursor | Hosted MCP at `https://nicheclock.elmrank.com/mcp` with a free key (`trending_now`, `upcoming_events` and three profile tools), or local MCP over stdio: run `nicheclock mcp` on your own machine for `trends_for_niche`, `upcoming`, `gsc_gaps` and `explain_topic` | [MCP](mcp.md) |
+| AI agents, or an assistant such as Claude Code or Cursor | Hosted MCP at `https://nicheclock.elmrank.com/mcp` with a free key (`trending_now`, `upcoming_events`, `search_updates` and three profile tools), or local MCP over stdio: run `nicheclock mcp` on your own machine for `trends_for_niche`, `upcoming`, `gsc_gaps` and `explain_topic` | [MCP](mcp.md) |
 | A script or an app | The hosted profile routes and the key routes of the REST API, with the same free key | [API](api.md) |
 | An SEO or content person | The Trending now and Upcoming tables on the web, or the HTML report from `nicheclock run` | [Quickstart](quickstart.md) |
 
-A free hosted MCP server and a small REST API are open. Anyone can sign in with GitHub at `https://nicheclock.elmrank.com/keys`, get a key and use it with the limits of 1,000 requests a day and 60 a minute per key, 2 active keys per person. The hosted tools `trending_now` and `upcoming_events` read the same public catalog as the Trending now and Upcoming tables of the website, and three profile tools match a profile you send (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`). The niche tools and the Search Console tools exist only in the local server. The GitHub rank is built but hidden on the website and is not served by the hosted API, and the website publishes no YouTube data.
+A free hosted MCP server and a small REST API are open. Anyone can sign in with GitHub at `https://nicheclock.elmrank.com/keys`, get a key and use it with the limits of 1,000 requests a day and 60 a minute per key, 2 active keys per person. The hosted tools `trending_now` and `upcoming_events` read the same public catalog as the Trending now and Upcoming tables of the website, `search_updates` says whether a Google core or spam update is rolling out and lists Google's Search updates and documentation changes, and three profile tools match a profile you send (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`). The niche tools and the Search Console tools exist only in the local server. The GitHub rank is built but hidden on the website and is not served by the hosted API, and the website publishes no YouTube data.
 
 ## What it does not do
 

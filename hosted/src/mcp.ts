@@ -22,6 +22,7 @@ import { ApiError, byteLength } from "./http";
 import { createJob } from "./jobs";
 import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
 import { trendingNow, upcomingEvents } from "./catalog-tools";
+import { searchUpdates } from "./updates-tool";
 import { checkProfileRate } from "./suggest-limits";
 
 export const MCP_SPEC_VERSION = "2026-07-28";
@@ -35,7 +36,8 @@ const MAX_BODY = 64 * 1024;
 export const SERVER_INFO = { name: "nicheclock-hosted", title: "nicheclock", version: "0.1.0" };
 const INSTRUCTIONS =
   "Trend radar over public data. trending_now(region, category, window, state, limit) lists the topics that are rising now, the same list as the " +
-  "Trending now tab of the website; upcoming_events(region, days, limit, kind) lists dated events with the date to publish by. " +
+  "Trending now tab of the website; upcoming_events(region, days, limit, kind) lists dated events with the date to publish by; " +
+  "search_updates(since, kind, limit) tells whether a Google core or spam update is rolling out now and lists Google Search ranking updates, documentation changes and blog posts. " +
   "trends_for_profile(profile) and upcoming_for_profile(profile) match a nicheclock profile (topics as Wikidata ids or words, a region) against the " +
   "rising Wikipedia pages and dated events; resolve_topic(text) finds the id of a word. The profile travels in the call and is not kept. " +
   "No volume is search volume: every number is in its own unit.";
@@ -81,6 +83,26 @@ const TOOLS = [
         days: { type: "integer", minimum: 1, maximum: 365, default: 30, description: "Look-ahead window in days" },
         limit: { type: "integer", minimum: 1, maximum: 50, default: 20, description: "Number of events" },
         kind: { type: "string", description: "Optional kind, e.g. 'film release', 'sports event', 'election', 'holiday' (a wrong one returns the list of valid kinds)" },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: "search_updates",
+    title: "Google Search updates",
+    description:
+      "Is a Google core or spam update rolling out now, and what changed in Google Search. The answer has rolling_now (true while a core or spam update has started and " +
+      "Google has published no end date), rolling_name and rolling_started, and a list of items, newest first: ranking updates of the last 12 months (kind 'ranking': start date, " +
+      "status 'started' while rolling or 'ended', end date and duration), Search and Crawling documentation changes (kind 'docs') and Search Central blog posts (kind 'blog'). " +
+      "Each item has date, kind, category, title, url and a short summary in Google's own wording; the answer also has data_date and attribution (Google Search Central, CC BY 4.0). " +
+      "The same data is on https://nicheclock.elmrank.com/google-updates/.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        since: { type: "string", description: "Optional date, YYYY-MM-DD: only items on or after it (a ranking update counts if it started, ended or is still rolling on or after it)" },
+        kind: { type: "string", enum: ["ranking", "docs", "blog"], description: "Optional: only ranking updates, only documentation changes or only blog posts" },
+        limit: { type: "integer", minimum: 1, maximum: 100, default: 20, description: "Number of items" },
       },
       additionalProperties: false,
     },
@@ -308,6 +330,7 @@ async function callTool(env: Env, key: KeyRow, name: string, args: Json, now: Da
     }
     if (name === "trending_now") return { result: await trendingNow(env, args), isError: false };
     if (name === "upcoming_events") return { result: await upcomingEvents(env, args, now), isError: false };
+    if (name === "search_updates") return { result: await searchUpdates(env, args, now), isError: false };
     if (name === "github_rising") {
       const window = args.window === undefined ? "daily" : args.window;
       if (typeof window !== "string" || !(GITHUB_WINDOWS as readonly string[]).includes(window)) {
