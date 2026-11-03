@@ -43,4 +43,4 @@ Every request goes through one HTTP client with your identity as User-Agent, at 
 
 It does not write articles, scrape sites that forbid it, or promise traffic. A model, when you bring one, judges and explains; collection stays plain code. See [Limitations](limitations.md).
 
-> **Status.** The source code is public. nicheclock is not on PyPI yet, and the hosted API has no public keys. Pages and features that are not released yet carry a <span class="tag soon">Coming</span> tag.
+> **Status.** The source code is public. nicheclock is not on PyPI yet, and the hosted API is free and open with a GitHub sign-in key. Pages and features that are not released yet carry a <span class="tag soon">Coming</span> tag.

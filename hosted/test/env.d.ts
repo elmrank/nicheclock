@@ -17,6 +17,8 @@ declare global {
       ALLOWED_ORIGINS: string;
       KEY_SIGNUP?: string;
       SITE_GATE?: string;
+      GITHUB_RANK?: string;
+      NICHE_TOOLS?: string;
       ASSETS: Fetcher;
       GITHUB_CLIENT_ID?: string;
       GITHUB_CLIENT_SECRET?: string;

@@ -81,9 +81,17 @@ validated (`400 -32020`), `server/discover`, `UnsupportedProtocolVersion` (`-320
 `initialize` handshake, still stateless (no `Mcp-Session-Id`). `GET`/`DELETE` → 405; foreign `Origin` → 403
 (`ALLOWED_ORIGINS` adds more). Responses are plain `application/json`, never SSE.
 
-Tools: `trends_for_niche(niche, days=7, region?)`, `upcoming(niche, days=30, region?)`, `niche_from_url(url)` (the local
-`gsc_gaps` is not offered: no user GSC data on the hosted side). An unknown niche returns a tool error listing
-the valid ids. Call `niche_from_url` again with the same URL to see the job status.
+Tools for public keys: `trending_now(region='global', category?, window='7d', state='rising'|'all', limit=20)` and
+`upcoming_events(region='global', days=30, limit=20, kind?)` (`src/catalog-tools.ts`), plus the profile tools below. They read
+per-region digests of the PUBLISHED catalog, `catalog-data/tools/` (`nicheclock/catalog/digest.py`, cut by `site/trending/build.py`
+from the files the site serves, so a tool never shows what the page hides); the events are one file per month. The CPU cost is
+about 1 ms of JSON for one region. `gsc_gaps` is not offered: no user GSC data on the hosted side.
+
+Niche tools: `trends_for_niche(niche, days=7, region?)`, `upcoming(niche, days=30, region?)`, `niche_from_url(url)` and the REST
+`/v1/niches`, `/v1/evidence`, `/v1/jobs` are kept for internal and admin keys only (the operator's pilot niches under
+`custom/<key id>/`). Public (`external`) keys do not see them unless `NICHE_TOOLS = "on"`: no catalog of niches is published to R2
+and no worker builds custom niches. An unknown niche returns a tool error listing the valid ids. Call `niche_from_url` again with
+the same URL to see the job status.
 
 Profile tools (`src/profile-tools.ts`): `trends_for_profile(profile, limit=20, min_fit=0.5)`, `upcoming_for_profile(profile, days=30, limit=20)` and `resolve_topic(text, context?)`, also REST `POST /v1/profile/trends`, `/v1/profile/upcoming` and `/v1/profile/resolve`. The agent carries the profile in each call and nothing is kept. They read build-time **shards** of the niche pool (files of about 25 KB, never over 150 KB, under `/catalog-data/shards/`, through the assets binding), not the 5 MB pool. Measured on the deployed Worker, `trends_for_profile` costs a median 16 ms and a p95 of 42 ms of CPU, which is over the free plan's 10 ms; the numbers, reply sizes and the title-only limit are in `docs/personalization.md`.
 
@@ -170,8 +178,7 @@ upload → `{"status":"done"}` (or `failed` with `error`). Nothing in the repo r
 
 ## Deploy (needs a Cloudflare token with Workers + D1 + R2)
 
-The Worker is `nicheclock-hosted`, the D1 database `nicheclock`, the R2 bucket `nicheclock-data`. GitHub OAuth stays
-**disabled on purpose** (`/auth/github/*` answers 503 `not_configured`) until an OAuth App is configured. Steps, for a rebuild:
+The Worker is `nicheclock-hosted`, the D1 database `nicheclock`, the R2 bucket `nicheclock-data`. Key sign-up is open (`KEY_SIGNUP = "on"` in `wrangler.toml`, since 03/11/2026); it needs the two GitHub OAuth secrets below, without which `/auth/github/*` answers 503 `not_configured`. `GITHUB_RANK = "off"` keeps the `github_rising` tool and `GET /v1/github/rising` closed while the GitHub rank is hidden. Steps, for a rebuild:
 
 1. `export CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=…`
 2. `npx wrangler d1 create nicheclock` → put the id in `wrangler.toml` (`database_id`).

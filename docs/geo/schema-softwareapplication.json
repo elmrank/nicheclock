@@ -3,7 +3,7 @@
   "@type": "SoftwareApplication",
   "name": "nicheclock",
   "url": "https://nicheclock.elmrank.com/",
-  "description": "A trend radar for AI agents and SEO and content teams. It lists topics that are starting to rise on Wikipedia, in the news and on Hacker News, lists dated upcoming events with a publish-by date, and gives an agent niche trends and events through a local MCP server. It has no search volume.",
+  "description": "A trend radar for AI agents and SEO and content teams. It lists topics that are starting to rise on Wikipedia, in the news and on Hacker News, lists dated upcoming events with a publish-by date, and gives an agent niche trends and events through a free hosted MCP server (with a key) or a local one. It has no search volume.",
   "applicationCategory": "BusinessApplication",
   "applicationSubCategory": "Trend research",
   "operatingSystem": "Linux, macOS, Windows",
@@ -20,7 +20,7 @@
   "featureList": [
     "Rising topics with a volume per channel in that channel's own unit",
     "Upcoming events with a publish-by date",
-    "MCP server: local over stdio (no hosted keys yet)",
+    "Free hosted MCP server and REST API with a GitHub sign-in key (1,000 requests a day), plus a local MCP server over stdio",
     "Trending now and upcoming events on the website, worldwide or for one of ten countries",
     "Your niche: an optional profile kept in the browser that filters both tables, with a reason for each row",
     "Source link and licence on every item",

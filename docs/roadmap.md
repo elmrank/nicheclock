@@ -23,7 +23,6 @@ Still planned:
 ## Planned
 
 - A published package on PyPI and a prebuilt container image.
-- Public hosted API and remote MCP with GitHub-login keys, after the private pilot ([API](api.md)).
 - Translations of the interface and the docs. English only for now; translations are welcome later, and the interface strings are being moved into one file to make that possible.
 - Reading the per-project `schedule:` field in the Docker scheduler.
 

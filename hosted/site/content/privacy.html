@@ -1,6 +1,6 @@
 path: /privacy/
 title: Privacy
-description: What this site stores about visitors: daily page counts with no identifier, no cookies and no third-party scripts. The self-hosted software sends nothing to us.
+description: What this site stores: daily page counts with no identifier, no third-party scripts and, for a free API key, your GitHub id, email, key hash and usage counters.
 section: legal
 ---
 <h1>Privacy</h1>
@@ -18,7 +18,7 @@ section: legal
 <p>We keep daily totals per page. We don't store one row per visitor, and we don't store your IP address, a cookie, a user agent or any identifier. The script reads the user agent only to skip crawlers and does nothing if the browser reports automation.</p>
 
 <h2>Cookies and third parties</h2>
-<p>The site sets no cookies. It stores nothing in your browser unless you save a niche profile (next section). It loads no third-party scripts, fonts or trackers. Links to sources and to GitHub take you to their sites, which have their own policies.</p>
+<p>Browsing the site sets no cookies. It stores nothing in your browser unless you save a niche profile (next section). It loads no third-party scripts, fonts or trackers. The one exception is the key page, <a href="/keys">/keys</a>: signing in there sets two cookies that are needed for the sign-in and for nothing else (described under API keys and sign-in below). Links to sources and to GitHub take you to their sites, which have their own policies.</p>
 
 <h2>Your niche profile</h2>
 <p>The optional <strong>Your niche</strong> page keeps a profile (the topics you write about, a country, and anything else you type there) in this browser only, in <code>localStorage</code> under one key. It is never put in the address, so a copied link cannot carry it and the page counter above cannot see it. <strong>No profile data leaves your browser</strong>: the page downloads the same public data files as every visitor (the page, its scripts, the topic list and one list of Wikipedia pages for your country, all without a query string) and does the matching on your device. Typing a topic, saving, editing, switching profiles and exporting send nothing. The site has no copy of your profile, so it cannot restore it: Export JSON gives you a file to keep. Delete this profile removes it from the browser, and a private window forgets it when it closes. A shared computer keeps it until you delete it.</p>
@@ -42,7 +42,19 @@ section: legal
 <h2>The self-hosted software</h2>
 <p>The nicheclock package sends nothing to us. It runs on your machine, keeps its data in your own directory, and talks only to the sources you enable and the model you configure. Your Search Console data and your model keys stay with you.</p>
 
-<h2>Accounts</h2>
-<p>There are no accounts, no sign-in and no API keys on this site at the moment, so we hold no personal data about you beyond what is written above. If that changes, this page changes first.</p>
+<h2>API keys and sign-in</h2>
+<p>The free hosted API and MCP server need a key. You get one by signing in with GitHub at <a href="/keys">/keys</a>. This is the only place where the site holds personal data about you.</p>
+<h3>What we ask GitHub for</h3>
+<p>The sign-in asks for the <code>user:email</code> scope. When you come back from GitHub, the server reads your numeric GitHub id, your GitHub login name and your verified primary email address, once. The GitHub access token is used for those two reads and then thrown away. It is never stored.</p>
+<h3>What we store</h3>
+<ul>
+  <li><strong>Per key:</strong> your GitHub id, your email address in lower case, a short public key id, the SHA-256 hash of the key, the plan (<code>free</code>), the dates it was created, last used (updated at most once an hour) and revoked. The key itself is shown once when you create it and is not stored, so we cannot show it again.</li>
+  <li><strong>Usage counters:</strong> per key, per day and per kind of call, the number of requests and the bytes sent back; plus a per-minute request count that is deleted within minutes. We use them to apply the limits and to see whether the service is used.</li>
+  <li><strong>Not stored:</strong> the contents of your requests and replies, and your IP address (Cloudflare's own network logs, above, still see it). For the profile tools, the profile you send is used in memory for that call and dropped.</li>
+</ul>
+<h3>Cookies on the key page</h3>
+<p>Two cookies, both HttpOnly and Secure. <code>nk_oauth</code> holds a random value for 10 minutes while you are at GitHub and is checked when you return, so a forged sign-in cannot be completed. <code>nk_session</code> lasts 1 hour after sign-in and holds your GitHub id, login and email, signed so it cannot be changed. It lives only in your browser; the server keeps no session record. Sign out on the key page deletes it.</p>
+<h3>Keeping and deleting</h3>
+<p>We keep key rows and counters while the service runs, including revoked keys, so that a revoked key stays refused. To have the rows tied to your GitHub id or email deleted, write to the address below. You can revoke a key yourself at any time on the key page. We don't sell or share this data, and we don't send you email: your address is used to limit the number of keys per person (2 active keys per email).</p>
 
-<p>{{CONTACT}} Last updated 2026-11-02.</p>
+<p>{{CONTACT}} Last updated 2026-11-03.</p>

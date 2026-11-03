@@ -25,7 +25,7 @@ Licensed under the GNU AGPL-3.0-or-later.
 - Only Google Trends and Apple charts are exact per country. Wikipedia and GDELT are approximate per country, and Hacker News, GitHub and your own feeds have no country. See [docs/regions.md](docs/regions.md).
 - The Gemini and Codex providers are unit-tested but have not been run against the real services.
 - It is tested on Linux. macOS and Windows may work and are untested.
-- The Trending catalog shown on the website is not yet available over MCP. The hosted API and MCP behind nicheclock.elmrank.com have no tool for it yet. The MCP server in this repository runs locally on your machine and reads the data of your own `nicheclock run`.
+- The hosted MCP server behind nicheclock.elmrank.com is free with a GitHub sign-in key. It has `trending_now` and `upcoming_events` for the catalog shown on the website, and three profile tools; it has no niche or Search Console tools. The MCP server in this repository runs locally on your machine and reads the data of your own `nicheclock run`.
 
 The full list is in [docs/limitations.md](docs/limitations.md).
 

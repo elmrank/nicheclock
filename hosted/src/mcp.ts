@@ -21,6 +21,7 @@ import type { Env, KeyRow } from "./env";
 import { ApiError, byteLength } from "./http";
 import { createJob } from "./jobs";
 import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
+import { trendingNow, upcomingEvents } from "./catalog-tools";
 import { checkProfileRate } from "./suggest-limits";
 
 export const MCP_SPEC_VERSION = "2026-07-28";
@@ -33,13 +34,58 @@ const MAX_BODY = 64 * 1024;
 
 export const SERVER_INFO = { name: "nicheclock-hosted", title: "nicheclock", version: "0.1.0" };
 const INSTRUCTIONS =
-  "Niche trend radar. trends_for_niche(niche, days) and upcoming(niche, days) take a niche id such as " +
-  "'birdwatching' (an unknown id returns the list of valid ids); niche_from_url(url) queues a custom niche " +
-  "(ready within about a day; call it again with the same url to see its status, then use the returned niche id). " +
+  "Trend radar over public data. trending_now(region, category, window, state, limit) lists the topics that are rising now, the same list as the " +
+  "Trending now tab of the website; upcoming_events(region, days, limit, kind) lists dated events with the date to publish by. " +
   "trends_for_profile(profile) and upcoming_for_profile(profile) match a nicheclock profile (topics as Wikidata ids or words, a region) against the " +
-  "rising Wikipedia pages and dated events; resolve_topic(text) finds the id of a word. The profile travels in the call and is not kept.";
+  "rising Wikipedia pages and dated events; resolve_topic(text) finds the id of a word. The profile travels in the call and is not kept. " +
+  "No volume is search volume: every number is in its own unit.";
+const NICHE_INSTRUCTIONS =
+  " trends_for_niche(niche, days) and upcoming(niche, days) take a niche id such as 'birdwatching' (an unknown id returns the list of valid ids); " +
+  "niche_from_url(url) queues a custom niche (ready within about a day; call it again with the same url to see its status, then use the returned niche id).";
+
+/** The niche tools need niches that exist: no public catalog is published and nothing builds custom niches, so external (public) keys do not see them. */
+const NICHE_TOOLS_SET: ReadonlySet<string> = new Set(["trends_for_niche", "upcoming", "niche_from_url"]);
 
 const TOOLS = [
+  {
+    name: "trending_now",
+    title: "Topics that are rising now",
+    description:
+      "The topics that are rising now, the same list as the Trending now tab of nicheclock.elmrank.com. Each item has label, qid (Wikidata id, or null), " +
+      "rise (a multiple of the topic's own 14-day median: 3.2 means +220%), volume with its unit (never search volume), state, the sources that " +
+      "measure it, category, a one-line why and a link. The answer also has data_date, the licence of each source used and a note on units.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        region: { type: "string", default: "global", description: "'global' (worldwide) or a country code: IN, CN, US, ID, PK, NG, BR, BD, RU, ET. Some countries have thin data; limited_note says so" },
+        category: { type: "string", description: "Optional category id such as 'sports', 'politics' or 'technology' (a wrong one returns the list of valid ids)" },
+        window: { type: "string", enum: ["24h", "48h", "7d"], default: "7d", description: "Window the rise is measured over" },
+        state: { type: "string", enum: ["rising", "all"], default: "rising", description: "'rising' keeps topics rising in that window; 'all' adds steady top items and topics that are fading or ended" },
+        limit: { type: "integer", minimum: 1, maximum: 50, default: 20, description: "Number of items" },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: "upcoming_events",
+    title: "Dated upcoming events with a publish-by date",
+    description:
+      "Dated events in the next `days` days, soonest first, the same calendar as the Upcoming tab of nicheclock.elmrank.com. Each has date, title, kind, " +
+      "publish_by (the event date minus a default lead time for that kind of event, not a measurement), days_until, days_to_publish_by, " +
+      "publish_by_passed, source_url and license.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        region: { type: "string", default: "global", description: "'global' (all events) or a country code: IN, CN, US, ID, PK, NG, BR, BD, RU, ET" },
+        days: { type: "integer", minimum: 1, maximum: 365, default: 30, description: "Look-ahead window in days" },
+        limit: { type: "integer", minimum: 1, maximum: 50, default: 20, description: "Number of events" },
+        kind: { type: "string", description: "Optional kind, e.g. 'film release', 'sports event', 'election', 'holiday' (a wrong one returns the list of valid kinds)" },
+      },
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  },
   {
     name: "trends_for_niche",
     title: "Trending topics for a niche",
@@ -167,6 +213,15 @@ const TOOLS = [
   },
 ] as const;
 
+function instructionsFor(env: Env, key: KeyRow): string {
+  return key.scope === "external" && env.NICHE_TOOLS !== "on" ? INSTRUCTIONS : INSTRUCTIONS + NICHE_INSTRUCTIONS;
+}
+
+/** github_rising is listed and callable only while GITHUB_RANK = "on" (the GitHub rank is hidden on the site). */
+function toolsFor(env: Env, key: KeyRow): readonly (typeof TOOLS)[number][] {
+  return TOOLS.filter((t) => (env.GITHUB_RANK === "on" || t.name !== "github_rising") && (key.scope !== "external" || env.NICHE_TOOLS === "on" || !NICHE_TOOLS_SET.has(t.name)));
+}
+
 type Json = Record<string, unknown>;
 type Id = string | number | null;
 
@@ -251,6 +306,8 @@ async function callTool(env: Env, key: KeyRow, name: string, args: Json, now: Da
         throw e;
       }
     }
+    if (name === "trending_now") return { result: await trendingNow(env, args), isError: false };
+    if (name === "upcoming_events") return { result: await upcomingEvents(env, args, now), isError: false };
     if (name === "github_rising") {
       const window = args.window === undefined ? "daily" : args.window;
       if (typeof window !== "string" || !(GITHUB_WINDOWS as readonly string[]).includes(window)) {
@@ -348,17 +405,17 @@ export async function handleMcp(req: Request, env: Env, key: KeyRow, now: Date):
             resultType: "complete",
             supportedVersions: SUPPORTED_VERSIONS,
             capabilities: { tools: {} },
-            instructions: INSTRUCTIONS,
+            instructions: instructionsFor(env, key),
             ttlMs: 3_600_000,
             cacheScope: "private",
             _meta: serverMeta,
           }),
         };
       case "tools/list":
-        return { status: 200, endpoint, body: ok(id, { resultType: "complete", tools: TOOLS, ttlMs: 300_000, cacheScope: "private", _meta: serverMeta }) };
+        return { status: 200, endpoint, body: ok(id, { resultType: "complete", tools: toolsFor(env, key), ttlMs: 300_000, cacheScope: "private", _meta: serverMeta }) };
       case "tools/call": {
         const name = typeof params.name === "string" ? params.name : "";
-        if (!TOOLS.some((t) => t.name === name)) return { status: 200, endpoint, body: rpcError(id, -32602, `Unknown tool: ${name}`) };
+        if (!toolsFor(env, key).some((t) => t.name === name)) return { status: 200, endpoint, body: rpcError(id, -32602, `Unknown tool: ${name}`) };
         const { result, isError } = await callTool(env, key, name, isObj(params.arguments) ? params.arguments : {}, now);
         return { status: 200, endpoint, body: ok(id, { ...toolText(result, isError, true, true), _meta: serverMeta }) };
       }
@@ -379,7 +436,7 @@ export async function handleMcp(req: Request, env: Env, key: KeyRow, now: Date):
       return {
         status: 200,
         endpoint,
-        body: ok(id, { protocolVersion: version, capabilities: { tools: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: INSTRUCTIONS }),
+        body: ok(id, { protocolVersion: version, capabilities: { tools: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: instructionsFor(env, key) }),
       };
     }
     case "ping":
@@ -387,10 +444,10 @@ export async function handleMcp(req: Request, env: Env, key: KeyRow, now: Date):
     case "server/discover":
       return { status: 400, body: rpcError(id, -32602, `params._meta["${META_VERSION}"] is required`), endpoint };
     case "tools/list":
-      return { status: 200, endpoint, body: ok(id, { tools: TOOLS }) };
+      return { status: 200, endpoint, body: ok(id, { tools: toolsFor(env, key) }) };
     case "tools/call": {
       const name = typeof params.name === "string" ? params.name : "";
-      if (!TOOLS.some((t) => t.name === name)) return { status: 200, endpoint, body: rpcError(id, -32602, `Unknown tool: ${name}`) };
+      if (!toolsFor(env, key).some((t) => t.name === name)) return { status: 200, endpoint, body: rpcError(id, -32602, `Unknown tool: ${name}`) };
       const { result, isError } = await callTool(env, key, name, isObj(params.arguments) ? params.arguments : {}, now);
       return { status: 200, endpoint, body: ok(id, toolText(result, isError, false, negotiated !== "2025-03-26")) };
     }

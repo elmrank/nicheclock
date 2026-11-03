@@ -82,6 +82,7 @@ const routes: Route[] = [
     re: /^\/v1\/github\/rising$/,
     endpoint: "GET /v1/github/rising",
     handler: async (c) => {
+      if (c.env.GITHUB_RANK !== "on") throw new ApiError(404, "not_found", "no such endpoint");
       const window = c.url.searchParams.get("window") ?? "daily";
       if (!(GITHUB_WINDOWS as readonly string[]).includes(window)) throw new ApiError(400, "invalid_params", "window must be daily, weekly or monthly");
       const language = c.url.searchParams.get("language")?.trim() || null;
@@ -221,6 +222,16 @@ async function finish(env: Env, key: KeyRow, r: { reply: Reply; endpoint: string
   return toResponse(r.reply);
 }
 
+/** Niche routes: no public catalog is published and no worker builds custom niches, so external (public) keys do not get them unless NICHE_TOOLS = "on"; internal and admin keys always do. */
+const NICHE_ENDPOINTS: ReadonlySet<string> = new Set([
+  "GET /v1/niches",
+  "GET /v1/niches/:id/trends",
+  "GET /v1/niches/:id/upcoming",
+  "GET /v1/evidence/:id",
+  "POST /v1/jobs",
+  "GET /v1/jobs/:id",
+]);
+
 async function handleApi(req: Request, env: Env, url: URL, now: Date): Promise<Response> {
   let match: { route: Route; params: Record<string, string> } | null = null;
   let pathKnown = false;
@@ -240,6 +251,7 @@ async function handleApi(req: Request, env: Env, url: URL, now: Date): Promise<R
   const { route, params } = match;
   return metered(req, env, now, async (key) => {
     if (route.scope && key.scope !== route.scope) throw new ApiError(403, "forbidden", `needs a key with scope ${route.scope}`);
+    if (key.scope === "external" && env.NICHE_TOOLS !== "on" && NICHE_ENDPOINTS.has(route.endpoint)) throw new ApiError(404, "not_found", "no such endpoint");
     const reply = await route.handler({ req, env, key, url, params: decodeParams(params), now });
     return { reply, endpoint: route.endpoint };
   });

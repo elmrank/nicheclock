@@ -20,6 +20,10 @@ export interface Env {
   KEY_SIGNUP?: string;
   /** "off" serves the static site without the Basic login (launch). Anything else, or unset: the gate is on and fails closed without BASIC_PASSWORD. */
   SITE_GATE?: string;
+  /** "on" serves the GitHub rank (MCP tool github_rising, GET /v1/github/rising). Anything else: the tool is not listed and the route is 404 (the GitHub rank tab is hidden on the site). */
+  GITHUB_RANK?: string;
+  /** "on" lets external (public) keys use the niche tools (MCP trends_for_niche, upcoming, niche_from_url; REST /v1/niches, /v1/jobs, /v1/evidence). Otherwise only internal and admin keys do: no public catalog is published and no worker builds custom niches. */
+  NICHE_TOOLS?: string;
 
   // Worker secrets (wrangler secret put ...)
   GITHUB_CLIENT_ID?: string;

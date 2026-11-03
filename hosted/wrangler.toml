@@ -21,7 +21,9 @@ MAX_CUSTOM_NICHES = "3"       # per key
 MAX_KEYS_PER_EMAIL = "2"      # active keys per verified email
 JOBS_DAILY_CAP = "20"         # new custom-niche jobs per UTC day, whole service
 SITE_GATE = "on"               # "off" removes the Basic login from the static site
-KEY_SIGNUP = "off"             # "on" opens /keys + GitHub sign-in. Off at launch: no cost cap for the hosted API yet, /v1 and /mcp stay 401 without a key
+KEY_SIGNUP = "on"              # "on" opens /keys + GitHub sign-in (opened 03/11/2026); no global daily cap by decision, only the per-key limits above
+NICHE_TOOLS = "off"             # "on" lets public keys use trends_for_niche / upcoming / niche_from_url and /v1/niches: off, no public niche catalog is published and no worker builds custom niches
+GITHUB_RANK = "off"            # "on" serves github_rising (MCP) and GET /v1/github/rising; off while the GitHub rank tab is hidden and no github-rank.json is published
 ALLOWED_ORIGINS = ""          # extra browser Origins allowed on /mcp (comma list); own origin is always allowed
 
 # D1: `wrangler d1 create nicheclock`, then paste the id here (not secret, but account specific).

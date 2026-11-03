@@ -32,6 +32,29 @@ describe("MCP transport", () => {
     expect(r.status).toBe(401);
   });
 
+  it("the 401 names the key page while sign-up is open, and not when it is closed", async () => {
+    const body = { jsonrpc: "2.0", id: 1, method: "tools/list" };
+    const open = await json(await call("/mcp", { body }));
+    expect(open.error.message).toContain("https://nicheclock.elmrank.com/keys");
+    const wrong = await json(await call("/mcp", { body, key: "nk_" + "A".repeat(43) }));
+    expect(wrong.error.message).toContain("/keys");
+    const { env } = await import("cloudflare:workers");
+    const closed = await json(await call("/mcp", { body, env: { ...env, KEY_SIGNUP: "off" } }));
+    expect(closed.error.message).not.toContain("/keys");
+  });
+
+  it("hides github_rising (tools/list, tools/call, REST) unless GITHUB_RANK is on", async () => {
+    const { env } = await import("cloudflare:workers");
+    const off = { ...env, GITHUB_RANK: "off" };
+    const k = await mkKey();
+    const list = await json(await call("/mcp", { key: k.key, env: off, body: { jsonrpc: "2.0", id: 1, method: "tools/list" } }));
+    expect(list.result.tools.map((t: { name: string }) => t.name)).not.toContain("github_rising");
+    expect(list.result.tools).toHaveLength(8);
+    const called = await json(await call("/mcp", { key: k.key, env: off, body: { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "github_rising", arguments: {} } } }));
+    expect(called.error.message).toContain("Unknown tool");
+    expect((await call("/v1/github/rising", { key: k.key, env: off })).status).toBe(404);
+  });
+
   it("answers GET and DELETE with 405 (stateless: no stream, no session)", async () => {
     const k = await mkKey();
     for (const method of ["GET", "DELETE"]) {
@@ -78,7 +101,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result._meta["io.modelcontextprotocol/serverInfo"].name).toBe("nicheclock-hosted");
   });
 
-  it("tools/list returns the seven tools with schemas, in a stable order", async () => {
+  it("tools/list returns the nine tools (all switches on) with schemas, in a stable order", async () => {
     const k = await mkKey();
     const res = await modern(k.key, "tools/list");
     expect(res.status).toBe(200);
@@ -89,7 +112,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result.resultType).toBe("complete");
     expect(r.result.ttlMs).toBeGreaterThan(0);
     expect(r.result.cacheScope).toBeTruthy();
-    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
+    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     for (const t of r.result.tools) {
       expect(t.inputSchema.type).toBe("object");
       expect(t.description.length).toBeGreaterThan(20);
@@ -216,7 +239,7 @@ describe("MCP earlier revisions (initialize handshake, still stateless)", () => 
     const k = await mkKey();
     const h = { "mcp-protocol-version": "2025-06-18" };
     const list = await json(await legacy(k.key, "tools/list", {}, h));
-    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
+    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trending_now", "upcoming_events", "trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     expect(list.result.resultType).toBeUndefined();
     const call1 = await json(await legacy(k.key, "tools/call", { name: "trends_for_niche", arguments: { niche: "birdwatching" } }, h, 2));
     expect(call1.result.isError).toBe(false);

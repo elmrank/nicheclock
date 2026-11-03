@@ -22,17 +22,19 @@ export interface Authed extends KeyRow {
   used_today: number;
 }
 
+/** 401 that tells a caller where to get a key while sign-up is open. */
+function unauthorized(env: Env, message: string): ApiError {
+  const where = env.KEY_SIGNUP === "on" ? `; get a free key at ${new URL("/keys", env.PUBLIC_BASE_URL).toString()}` : "";
+  return new ApiError(401, "unauthorized", message + where, { "www-authenticate": 'Bearer realm="nicheclock"' });
+}
+
 /**
  * Resolve a Bearer key to its row and today's request count (one D1 read). Revoked keys never match.
  * Throws 401 for a missing / malformed / unknown / revoked key.
  */
 export async function authenticate(env: Env, req: Request, day: string, now: Date): Promise<Authed> {
   const token = bearerToken(req);
-  if (!token || !KEY_RE.test(token)) {
-    throw new ApiError(401, "unauthorized", "send Authorization: Bearer nk_...", {
-      "www-authenticate": 'Bearer realm="nicheclock"',
-    });
-  }
+  if (!token || !KEY_RE.test(token)) throw unauthorized(env, "send Authorization: Bearer nk_... (key missing or malformed)");
   const hash = await sha256Hex(token);
   const row = await env.DB.prepare(
     `SELECT k.id, k.owner_github_id, k.email, k.scope, k.plan, k.created_at, k.last_used_at,
@@ -41,9 +43,7 @@ export async function authenticate(env: Env, req: Request, day: string, now: Dat
   )
     .bind(day, hash)
     .first<Authed>();
-  if (!row) {
-    throw new ApiError(401, "unauthorized", "unknown or revoked key", { "www-authenticate": 'Bearer realm="nicheclock"' });
-  }
+  if (!row) throw unauthorized(env, "unknown or revoked key");
   // last_used_at is a coarse signal: refresh at most hourly to save D1 writes.
   const last = row.last_used_at ? Date.parse(row.last_used_at) : 0;
   if (now.getTime() - last > 3_600_000) {

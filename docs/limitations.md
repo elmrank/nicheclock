@@ -48,7 +48,7 @@ What nicheclock cannot do yet, so you can decide before you invest time.
 
 ## Hosted service
 
-- Private pilot, not open to outsiders. See [API](api.md).
+- Free and open to anyone with a GitHub sign-in key, limited per key to 1,000 requests a day and 60 a minute, with no uptime promise. See [API](api.md).
 - It serves only data licensed for redistribution, so it has fewer sources than a self-hosted install.
 - No Search Console data, no bring-your-own-model.
 - Custom niches from a URL are built by a daily batch, not live.

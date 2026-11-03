@@ -103,7 +103,7 @@ Wikidata does not tie a hobby to what it is about: `birdwatching` is a hobby and
 
 ## Profile tools for AI agents (MCP and REST)
 
-The hosted Worker serves three tools that take a profile in the call and keep nothing: `trends_for_profile`, `upcoming_for_profile` and `resolve_topic`. They are MCP tools on `POST /mcp` and REST routes `POST /v1/profile/trends`, `/v1/profile/upcoming` and `/v1/profile/resolve`, with the same Bearer key as the other hosted endpoints (keys are not open to the public yet, see the hosted README). The matcher is the page's own `match.js`, so an agent and a browser get the same list from the same rules.
+The hosted Worker serves three tools that take a profile in the call and keep nothing: `trends_for_profile`, `upcoming_for_profile` and `resolve_topic`. They are MCP tools on `POST /mcp` and REST routes `POST /v1/profile/trends`, `/v1/profile/upcoming` and `/v1/profile/resolve`, with the same Bearer key as the other hosted endpoints (a free key from the GitHub sign-in on the key page, see [API](api.md)). The matcher is the page's own `match.js`, so an agent and a browser get the same list from the same rules.
 
 ```bash
 curl -s https://nicheclock.elmrank.com/v1/profile/trends -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \

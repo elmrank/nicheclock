@@ -40,7 +40,7 @@ export function clearShardCache(): void {
   files.clear();
 }
 
-async function getJson<T>(env: Env, path: string): Promise<T | null> {
+export async function getJson<T>(env: Env, path: string): Promise<T | null> {
   let p = files.get(path) as Promise<T | null> | undefined;
   if (!p) {
     p = (async () => {

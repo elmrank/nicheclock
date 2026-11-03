@@ -1,32 +1,32 @@
 ---
 title: Hosted API
-description: The hosted nicheclock REST API and remote MCP endpoint: free API keys with GitHub login, quota, curl examples. Coming soon, in private pilot.
+description: The free hosted nicheclock REST API and remote MCP endpoint: keys through GitHub sign-in, 1,000 requests a day, curl examples and the endpoints.
 order: 10
 publish: true
 ---
 
 # Hosted API
 
-<span class="tag soon">Coming soon</span>
+> **Status.** Open to everyone and free. Sign in with GitHub at `https://nicheclock.elmrank.com/keys` to get a key. The service has no uptime promise, and the limits may change; see the [terms](/terms/) and the [privacy page](/privacy/). Nothing here changes how the self-hosted version works.
 
-> **Status.** The hosted service is running as a private pilot for the team. Keys are not open to the public, GitHub login is switched off, and the commands on this page cannot be run by outsiders yet. This page describes what the service is built to do. Nothing here changes how the self-hosted version works.
-
-The hosted API serves precomputed radar data for a catalog of niches over REST and over [remote MCP](mcp.md#hosted-server), so an agent or a script can ask "what is trending in this niche" without running anything. You can also ask it to build a niche from your site's URL.
+The hosted service has two parts. The [remote MCP server](mcp.md#hosted-server) is the main one: five read-only tools, with an example call and reply for each, that an agent can use without running anything. The REST API is small: the profile routes below and your keys. It serves public data only, and it needs no install.
 
 ## Self-hosted or hosted
 
-| | Self-hosted | Hosted (coming soon) |
+| | Self-hosted | Hosted |
 |---|---|---|
 | You run it | yes | no |
-| Your niches | any, edited by you | catalog niches, plus up to 3 custom niches built from a URL |
-| Sources | all of the [sources](sources.md) you enable | only those whose terms allow redistribution: Wikimedia pageviews, Wikipedia facts, Wikidata, GDELT, Hacker News, Federal Register |
+| Your niches | any, edited by you | none: the hosted server reads the public catalog behind the Trending now and Upcoming tabs, and the profile you send |
+| Sources | all of the [sources](sources.md) you enable | only those whose terms allow redistribution, the ones the website shows |
 | Search Console gaps | yes | never: the hosted side holds no Search Console data |
 | Your own model | yes | no, the client's model does the judging |
 | Cost | your server | free quota, see below |
 
+The niche tools of the local MCP server read niches you define, so they belong to the self-hosted version, and the hosted server does not offer them.
+
 ## Get a key
 
-Sign in with GitHub at `https://nicheclock.elmrank.com/keys`. The key page shows a key that starts with `nk_` once, and stores only its SHA-256 hash afterwards. Rules:
+Sign in with GitHub at `https://nicheclock.elmrank.com/keys`. The account needs a verified primary email address; it is used only to limit keys per person. Press Create key: the page shows a key that starts with `nk_` once, and stores only its SHA-256 hash afterwards. What is stored about you is on the [privacy page](/privacy/). Rules:
 
 - at most 2 active keys per email and per GitHub account;
 - revoke a key from the page, or with `DELETE /v1/keys/{id}`;
@@ -37,77 +37,41 @@ Sign in with GitHub at `https://nicheclock.elmrank.com/keys`. The key page shows
 | Limit | Value |
 |---|---|
 | Requests | 1,000 per day (UTC) and 60 per minute, per key |
-| Custom niches | 3 per key, built from at most 50 pages each and refreshed daily |
-| New custom-niche jobs | 20 per day for the whole service |
+| Profile calls | 30 per minute, per key (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`) |
 
-Going over returns `429` with `Retry-After`. The free tier may change once the service has real usage; paid plans, if any, will be announced before they apply.
+Going over returns `429` with `Retry-After`. Every MCP call, whatever the tool, counts as one request. The free tier may change once the service has real usage; paid plans, if any, will be announced before they apply.
 
 ## Endpoints
 
-Every request needs `Authorization: Bearer nk_...`. Errors are `{"error": {"code": "...", "message": "..."}}`.
+Every request needs `Authorization: Bearer nk_...`. A request without a valid key gets `401` and a message that points to the key page. Errors are `{"error": {"code": "...", "message": "..."}}`.
 
 | Endpoint | Returns |
 |---|---|
-| `GET /v1/niches` | Catalog niches and your custom ones. |
-| `GET /v1/niches/{id}/trends?days=7` | Scored topics, best first. `days` is 1 to 365. |
-| `GET /v1/niches/{id}/upcoming?days=30` | Dated events with `publish_by`. `days` is 1 to 730. |
-| `GET /v1/evidence/{item_id}` | The raw signals behind one topic. |
-| `POST /v1/jobs` with `{"url": "https://your-site.example"}` | Queues a custom niche. `202` when queued, `200` if that site is already queued or done for your key. |
-| `GET /v1/jobs/{id}` | `queued`, `running`, `done` or `failed`. |
+| `POST /mcp` | Remote MCP, same key: `trending_now`, `upcoming_events` and the three profile tools. See [MCP](mcp.md#hosted-server) for how to connect and for each tool's arguments and reply. |
+| `POST /v1/profile/trends`, `/v1/profile/upcoming`, `/v1/profile/resolve` | The profile routes, below. |
 | `GET /v1/keys` | Your keys and those of the same GitHub account. |
-| `POST /mcp` | Remote MCP, same key. |
+| `DELETE /v1/keys/{id}` | Revokes one of them. |
 
-Every item carries `source`, `source_url` and a `license` or `attribution`, so you can show where it came from. Keep the attribution when you display the data.
+`trending_now` and `upcoming_events` are MCP tools only; they have no REST route. Every item carries `source`, `source_url` and a `license` or `attribution`, so you can show where it came from. Keep the attribution when you display the data.
 
-## Examples
+## Example
+
+A tool call over plain HTTP, the same request an MCP client sends. The reply is shown on the [MCP page](mcp.md#hosted-tools):
 
 ```bash
 export NICHECLOCK_KEY=nk_your_key_here
 BASE=https://nicheclock.elmrank.com
 
-# which niches exist
-curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/niches"
+curl -s -X POST "$BASE/mcp" -H "Authorization: Bearer $NICHECLOCK_KEY" -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "trending_now", "arguments": {"region": "US", "limit": 3}}}'
 
-# what is trending in one of them, last 7 days
-curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/niches/birdwatching/trends?days=7"
-
-# dated events in the next 30 days, with the date to publish by
-curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/niches/birdwatching/upcoming?days=30"
-
-# the signals behind one topic (ids come from the trends response)
-curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/evidence/birdwatching~a1b2c3d4e5f6"
-
-# build a niche from your site, then poll the job
-curl -s -X POST -H "Authorization: Bearer $NICHECLOCK_KEY" -H "Content-Type: application/json" \
-  -d '{"url": "https://your-site.example"}' "$BASE/v1/jobs"
-curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/jobs/JOB_ID"
+# your keys
+curl -s -H "Authorization: Bearer $NICHECLOCK_KEY" "$BASE/v1/keys"
 ```
-
-A trends response looks like this (a shortened example, not live data):
-
-```json
-{
-  "niche": "birdwatching",
-  "items": [
-    {
-      "id": "birdwatching~a1b2c3d4e5f6",
-      "title": "Example topic",
-      "score": 71.4,
-      "why": "hn 120 pts, 40 comments",
-      "at": "2026-10-31T03:10:00Z",
-      "source": "hn",
-      "source_url": "https://news.ycombinator.com/item?id=1",
-      "attribution": "Hacker News via Algolia HN Search API"
-    }
-  ]
-}
-```
-
-Custom niches are built by a batch job on our side, not live, so allow up to a day. `niche_from_url` in the MCP server does the same thing.
 
 ## Match a profile (agents)
 
-Three more routes take a small profile in the request body instead of a niche id, and keep nothing: the profile is used in memory for the call and dropped. They answer from the Wikipedia pageview pools of the United States, India, Brazil and Indonesia (`region` is one of `US`, `IN`, `BR`, `ID`) and from Wikidata events, and the same three are MCP tools (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`).
+These routes take a small profile in the request body, and keep nothing: the profile is used in memory for the call and dropped. They answer from the Wikipedia pageview pools of the United States, India, Brazil and Indonesia (`region` is one of `US`, `IN`, `BR`, `ID`) and from Wikidata events, and the same three are MCP tools (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`).
 
 | Endpoint | Body | Returns |
 |---|---|---|

@@ -1,6 +1,6 @@
 ---
 title: What is nicheclock
-description: nicheclock is a free trend radar for AI agents and SEO teams: rising topics and dated events with publish-by dates, on the web and over a local MCP server.
+description: nicheclock is a free trend radar for AI agents and SEO teams: rising topics and dated events with publish-by dates, on the web, over a free hosted API and MCP.
 order: 2
 publish: true
 updated: 2026-11-03
@@ -9,7 +9,7 @@ jsonld: geo/schema-softwareapplication.json
 
 # What is nicheclock
 
-nicheclock is a trend radar. Its tagline is "Rising topics, dated events, and when to publish." It lists topics that are starting to rise on Wikipedia, in the news and on Hacker News, and it lists dated upcoming events with the date to publish by. A person reads the Trending now and Upcoming tables on the website, or the report a self-hosted run writes. Agents such as Claude Code or Cursor read niche trends and events over a local MCP server that runs on your own machine. The home page also has a 74-second silent video that walks through the tables.
+nicheclock is a trend radar. Its tagline is "Rising topics, dated events, and when to publish." It lists topics that are starting to rise on Wikipedia, in the news and on Hacker News, and it lists dated upcoming events with the date to publish by. A person reads the Trending now and Upcoming tables on the website, or the report a self-hosted run writes. Agents such as Claude Code or Cursor read niche trends and events over a free hosted MCP server with a key, or over a local MCP server that runs on your own machine. The home page also has a 74-second silent video that walks through the tables.
 
 ## What it returns
 
@@ -26,10 +26,11 @@ The **Your niche** link in the top bar of the website is optional and needs no a
 
 | You are | Use | Start at |
 |---|---|---|
-| AI agents, or an assistant such as Claude Code or Cursor | MCP, local over stdio: run `nicheclock mcp` on your own machine for `trends_for_niche`, `upcoming`, `gsc_gaps` and `explain_topic` | [MCP](mcp.md) |
+| AI agents, or an assistant such as Claude Code or Cursor | Hosted MCP at `https://nicheclock.elmrank.com/mcp` with a free key (`trending_now`, `upcoming_events` and three profile tools), or local MCP over stdio: run `nicheclock mcp` on your own machine for `trends_for_niche`, `upcoming`, `gsc_gaps` and `explain_topic` | [MCP](mcp.md) |
+| A script or an app | The hosted profile routes and the key routes of the REST API, with the same free key | [API](api.md) |
 | An SEO or content person | The Trending now and Upcoming tables on the web, or the HTML report from `nicheclock run` | [Quickstart](quickstart.md) |
 
-There are no public API keys yet, so there is no public REST API and no hosted MCP endpoint today. The hosted server also has three profile tools for agents, but they need a key and keys are not open; the [API](api.md) page describes the private pilot. The Trending now table has no MCP tool and no REST endpoint. The GitHub rank is built but hidden on the website, and the website publishes no YouTube data.
+A free hosted MCP server and a small REST API are open. Anyone can sign in with GitHub at `https://nicheclock.elmrank.com/keys`, get a key and use it with the limits of 1,000 requests a day and 60 a minute per key, 2 active keys per person. The hosted tools `trending_now` and `upcoming_events` read the same public catalog as the Trending now and Upcoming tables of the website, and three profile tools match a profile you send (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`). The niche tools and the Search Console tools exist only in the local server. The GitHub rank is built but hidden on the website and is not served by the hosted API, and the website publishes no YouTube data.
 
 ## What it does not do
 
@@ -43,5 +44,5 @@ The Trending now table on the website reads Wikipedia pageviews in twelve langua
 
 - Licence: AGPL-3.0-or-later.
 - Install: Python 3.11 or newer, `pipx install` from a checkout of the repository, or Docker Compose.
-- Hosted API: not open. No public keys yet; MCP runs locally over stdio.
+- Hosted API and MCP: free, open with a GitHub sign-in key (1,000 requests a day, 60 a minute per key). A local MCP server over stdio is also included.
 - Source code: [github.com/elmrank/nicheclock](https://github.com/elmrank/nicheclock)

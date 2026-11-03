@@ -235,7 +235,7 @@ export async function keysPage(req: Request, env: Env): Promise<Response> {
     `<p>Signed in as <b>${esc(sess.s.login || sess.s.email)}</b> (${esc(sess.s.email)}).</p>
 <h2>Your keys</h2>${keyRows(keys, sess.csrf)}
 <form method="post" action="/keys/new"><input type="hidden" name="csrf" value="${esc(sess.csrf)}"><button>Create key</button></form>
-<p>Up to 2 active keys per email. Free quota: 1,000 requests/day and 60/minute per key, 3 custom niches per key.</p>
+<p>Up to 2 active keys per email. Free quota: 1,000 requests/day and 60/minute per key. <a href="/docs/mcp/#hosted-server">How to connect Claude, Cursor and others</a>.</p>
 <form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="${esc(sess.csrf)}"><button class="ghost">Sign out</button></form>`,
   );
 }
@@ -261,8 +261,8 @@ export async function createKeyAction(req: Request, env: Env): Promise<Response>
       `<div class="warn"><b>Copy this key now.</b> It is shown once; only a hash is stored, so it cannot be recovered. If you lose it, revoke it and create another.</div>
 <pre>${esc(k.key)}</pre>
 <p>Key id <code>${esc(k.id)}</code>, created ${esc(k.created_at)}.</p>
-<p>REST: <code>curl -H "Authorization: Bearer ${esc(k.key)}" ${esc(env.PUBLIC_BASE_URL)}/v1/niches</code></p>
-<p>MCP endpoint: <code>${esc(env.PUBLIC_BASE_URL)}/mcp</code> with the same <code>Authorization: Bearer</code> header.</p>
+<p>MCP endpoint: <code>${esc(env.PUBLIC_BASE_URL)}/mcp</code> with the header <code>Authorization: Bearer</code> and this key. Tools: trending_now, upcoming_events, trends_for_profile, upcoming_for_profile, resolve_topic. <a href="/docs/mcp/#hosted-server">Setup for Claude Code, Claude Desktop and Cursor</a>.</p>
+<p>Check it: <code>curl -X POST -H "Authorization: Bearer ${esc(k.key)}" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' ${esc(env.PUBLIC_BASE_URL)}/mcp</code></p>
 <p><a href="/keys">Back to your keys</a></p>`,
     );
   } catch (e) {

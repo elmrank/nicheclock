@@ -13,6 +13,8 @@ export default defineConfig({
             TEST_MIGRATIONS: migrations,
             KEY_SIGNUP: "on",   // wrangler.toml ships "off"; the key flow is tested with it on
             SITE_GATE: "on",    // wrangler.toml ships "off" since the launch; the Basic gate is tested with it on
+            NICHE_TOOLS: "on",  // wrangler.toml ships "off"; the niche code is tested with it on, and the closed state in the tests that set it off
+            GITHUB_RANK: "on",  // wrangler.toml ships "off" (tab hidden); the rank code is tested with it on
             GITHUB_CLIENT_ID: "test-client-id",
             GITHUB_CLIENT_SECRET: "test-client-secret",
             SESSION_SECRET: "test-session-secret-0123456789abcdef",
