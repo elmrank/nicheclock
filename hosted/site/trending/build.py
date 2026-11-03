@@ -23,6 +23,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SITE_DIR = HERE.parent
+sys.path.insert(0, str(SITE_DIR))
+from ghmark import github_link  # noqa: E402  (shared with site/build.py)
 REPO = HERE.parents[2]
 CATALOG = SITE_DIR / "catalog-data"
 FIXTURE = HERE / "fixture"
@@ -322,7 +324,8 @@ def prerender_html(public_data: Path, today: str | None = None) -> str:
 
 
 def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "https://nicheclock.elmrank.com/",
-               beacon: str | None = None, repo_note: str = "Source code: coming soon.", prerender: str = "") -> str:
+               beacon: str | None = None, repo_note: str = "Source code: coming soon.", prerender: str = "",
+               repo_url: str | None = None) -> str:
     """The homepage. `noindex=False` makes it the one indexable URL. `beacon` is the hashed b.js name (first-party page counts)."""
     e = html.escape
     ld = json.dumps({
@@ -345,7 +348,8 @@ def index_html(names: dict[str, str], noindex: bool = True, canonical: str = "ht
         + (f'<script src="/assets/{beacon}" defer></script>\n' if beacon else "")
         + '</head>\n<body>\n<a class="skip" href="#app">Skip to the table</a>\n'
         f'<header class="bar"><div class="bar-in"><a class="brand" href="/">{CLOCK_MARK}<span>nicheclock</span></a>'
-        '<nav class="bar-links" aria-label="Documentation"><a class="mybtn" id="nichebtn" href="#/niche">Your niche</a><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a></nav></div></header>\n'
+        '<nav class="bar-links" aria-label="Documentation"><a class="mybtn" id="nichebtn" href="#/niche">Your niche</a><a href="/docs/">Docs</a><a href="/docs/mcp/">MCP</a><a href="/docs/sources/">Sources</a>'
+        + github_link(repo_url) + '</nav></div></header>\n'
         f'<section class="hero"><div class="hero-in"><div class="hero-text"><h1>{e(TAGLINE)}</h1><p class="sub">{e(SUBLINE)}</p></div></div></section>\n'
         f'<main id="app" tabindex="-1" aria-live="polite" data-src="/catalog-data/" data-niche="/assets/{names["niche"]}" data-unit-note="{e(UNIT_NOTE)}"{" data-prerender" if prerender else ""}>\n'
         + (prerender if prerender else '<p class="state">Loading data…</p>') + '\n'

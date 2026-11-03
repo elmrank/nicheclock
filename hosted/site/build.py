@@ -36,6 +36,8 @@ from markdown_it import MarkdownIt
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # the report page lives in the package (nicheclock/output/app/)
 from nicheclock.output import page as nc_page  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ghmark import github_link  # noqa: E402  (shared with site/trending/build.py)
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
@@ -176,7 +178,7 @@ def header(cur: str) -> str:
     return (
         f'<a class="skip" href="#main">Skip to content</a>{banner}'
         f'<header class="site-head"><div class="wrap"><a class="brand" href="/">{LOGO}{NAME}</a>'
-        f'<nav aria-label="Main">{links}</nav></div></header>'
+        f'<nav aria-label="Main">{links}{github_link(REPO_URL if REPO_PUBLIC else None)}</nav></div></header>'
     )
 
 
@@ -406,7 +408,7 @@ def main() -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render(page, names["site.css"], names["b.js"], docs), encoding="utf-8")
     if trending:
-        (out / "index.html").write_text(trending.index_html(trending_names, noindex="/" not in INDEXABLE, canonical=f"{SITE}/", beacon=names["b.js"], repo_note=source_note(), prerender=trending.prerender_html(out / "catalog-data")), encoding="utf-8")
+        (out / "index.html").write_text(trending.index_html(trending_names, noindex="/" not in INDEXABLE, canonical=f"{SITE}/", beacon=names["b.js"], repo_note=source_note(), repo_url=REPO_URL if REPO_PUBLIC else None, prerender=trending.prerender_html(out / "catalog-data")), encoding="utf-8")
         (out / "demo").mkdir()
         (out / "demo" / "index.html").write_text(home_page(app_names, "/demo/"), encoding="utf-8")
     else:
