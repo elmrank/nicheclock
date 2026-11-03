@@ -32,6 +32,7 @@ All need `Authorization: Bearer nk_…` (except the key page). Errors: `{"error"
 | `GET /v1/admin/jobs?status=queued`, `POST /v1/admin/jobs/{id}` `{"status": "running\|done\|failed", "error"?}` | admin scope: the operator cron's job queue |
 | `POST /mcp` | remote MCP, see below |
 | `GET /keys`, `/auth/github/login`, `/auth/github/callback` | key page + GitHub OAuth |
+| `POST /v1/profile/trends`, `/v1/profile/upcoming`, `/v1/profile/resolve` | match a profile (or resolve a word) against the niche pool and events; same Bearer key; see "Profile tools" below |
 
 **Source allow-list at serving time** (`src/sources.ts`): wikimedia_pageviews, wikipedia (facts), wikidata,
 gdelt, hn, federal_register, github. `internal` and `admin` keys also see nager, google_trends, apple (internal use is not redistribution; items using them are tagged `scope: internal`, see SCHEMA.md). Anything else present in
@@ -84,10 +85,38 @@ Tools: `trends_for_niche(niche, days=7, region?)`, `upcoming(niche, days=30, reg
 `gsc_gaps` is not offered: no user GSC data on the hosted side). An unknown niche returns a tool error listing
 the valid ids. Call `niche_from_url` again with the same URL to see the job status.
 
+Profile tools (`src/profile-tools.ts`): `trends_for_profile(profile, limit=20, min_fit=0.5)`, `upcoming_for_profile(profile, days=30, limit=20)` and `resolve_topic(text, context?)`, also REST `POST /v1/profile/trends`, `/v1/profile/upcoming` and `/v1/profile/resolve`. The agent carries the profile in each call and nothing is kept. They read build-time **shards** of the niche pool (files of about 25 KB, never over 150 KB, under `/catalog-data/shards/`, through the assets binding), not the 5 MB pool. Measured on the deployed Worker, `trends_for_profile` costs a median 16 ms and a p95 of 42 ms of CPU, which is over the free plan's 10 ms; the numbers, reply sizes and the title-only limit are in `docs/personalization.md`.
+
 ```bash
 curl -s https://nicheclock.elmrank.com/mcp -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
+
+## Profile page endpoints (no key)
+
+The profile page of the site has three buttons that call the Worker without a key (`src/suggest*.ts`). Same origin only, `application/json` bodies, no CORS, limits per address (below), no logging of any input:
+
+| | |
+|---|---|
+| `GET /v1/suggest/status` | `{resolve, site, youtube}`; `youtube` is true only when the secret `YOUTUBE_API_KEY` is set |
+| `POST /v1/resolve` `{"text": "chess"}` | "Look up a word": the topic list first, Wikidata only for a word not in it. 20 an hour per address |
+| `POST /v1/suggest/site` `{"url": "https://example.org"}` | "Read my site": robots.txt (RFC 9309), one sitemap (at most 300 KB), at most 8 page titles (64 KB each), at most 26 subrequests, one redirect on the same host at most; user agent `nicheclock-suggest/1.0 (+https://nicheclock.elmrank.com/bot; oss@elmrank.com)`. 5 an hour per address, one read of a site a minute |
+| `POST /v1/suggest/youtube` `{"channel": "@example-chess"}` | "Read my channel": 3 YouTube Data API units a call, 5 a day per address, 2,000 units a day in all (one D1 row per UTC day). 404 `not_available` without the key |
+
+Limits: the `BURST` rate-limiting binding (6 calls per 10 s per address; Cloudflare's binding only supports 10 or 60 second windows) is the first gate; the hourly and daily caps are D1 counters under an HMAC of the address and the window (`migrations/0003_suggest_limits.sql`), deleted after the window. Condition (b) of the plan, no logging of what a person typed: no `console` call in these files (`test/privacy.test.ts` greps `src/suggest*.ts`, `profile-tools.ts`, `shards.ts` and `robotstxt.ts`), fixed error messages, and the replies do not hold the input.
+
+### The YouTube key (optional, billing OFF)
+
+"Read my channel" is hidden until the Worker has the secret `YOUTUBE_API_KEY`. Make the key in a **new Google Cloud project that has no billing account**, separate from the project of the catalog build:
+
+1. Open <https://console.cloud.google.com/> and create a project (project picker, **New project**), for example `nicheclock-suggest`. Do not link a billing account; **Billing** should say the project has none.
+2. **APIs & Services, Library**: search **YouTube Data API v3** and press **Enable**. It has a free quota of 10,000 units a day and needs no billing.
+3. **APIs & Services, Credentials, Create credentials, API key.** Copy the key once.
+4. Open the key (**Edit API key**): under **API restrictions** choose **Restrict key**, tick only **YouTube Data API v3**, save. Leave application restrictions at **None**: Cloudflare's addresses are not stable, so an IP restriction would break it.
+5. From the machine that deploys, with the Cloudflare token in the environment: `cd hosted && npx wrangler secret put YOUTUBE_API_KEY` and paste the key at the prompt. The key lives only as a Worker secret; never put it in a file, a commit or a shell history line.
+6. Check: `curl -s https://nicheclock.elmrank.com/v1/suggest/status` shows `"youtube":true` and the button appears on the profile page. To switch it off: `npx wrangler secret delete YOUTUBE_API_KEY`.
+
+The Worker caps itself at 2,000 of the 10,000 daily units. The key is sent only to `www.googleapis.com`, in the request URL of the three calls, and is never in a reply or a log.
 
 ## Local development (no Cloudflare login)
 
@@ -147,10 +176,11 @@ The Worker is `nicheclock-hosted`, the D1 database `nicheclock`, the R2 bucket `
 1. `export CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=…`
 2. `npx wrangler d1 create nicheclock` → put the id in `wrangler.toml` (`database_id`).
 3. `npx wrangler r2 bucket create nicheclock-data`
-4. `npx wrangler d1 migrations apply nicheclock --remote`
+4. `npx wrangler d1 migrations apply nicheclock --remote` (0003 adds the two small tables of the three profile-page buttons: `suggest_rate`, `youtube_units_daily`; apply it before the deploy that uses it, it is additive and the previous Worker ignores it).
 5. Create the GitHub OAuth App (under the `elmrank` organisation): homepage `https://nicheclock.elmrank.com`,
    callback `https://nicheclock.elmrank.com/auth/github/callback`. Then
    `npx wrangler secret put GITHUB_CLIENT_ID | GITHUB_CLIENT_SECRET | SESSION_SECRET` (SESSION_SECRET: `openssl rand -hex 32`).
+   The Worker also reads two optional secrets: `YOUTUBE_API_KEY` (see "Profile page endpoints", it switches the "Read my channel" button on) and, for the counters of the three buttons, `SESSION_SECRET` (the HMAC key; without it a fixed fallback key is used).
 6. `npx wrangler deploy` (the route `nicheclock.elmrank.com` is a Custom Domain; `workers_dev = false`). The elmrank.com zone must be on the same account.
 7. Mint internal keys and one admin key: `node scripts/mint-key.mjs …` then `npx wrangler d1 execute nicheclock --remote --file mint.sql`.
 8. Export + upload the catalog once, then `curl` `/v1/niches` with an internal key.
@@ -175,6 +205,8 @@ The Worker is `nicheclock-hosted`, the D1 database `nicheclock`, the R2 bucket `
 
 ## Known gaps (honest list)
 
+* The three profile-page buttons and the profile tools were tested offline (fake network and fake assets in `test/`, a stubbed Worker in `test-privacy.js`) and, for CPU and reply size, on the deployed Worker (docs/personalization.md). "Read my channel" has not been run against the real YouTube API until a key is added.
+* Reading a site cannot tell what a public-looking name resolves to (a Worker has no DNS lookup); see docs/personalization.md, "Read my site".
 * The GitHub OAuth flow is tested with a mocked GitHub (`test/github.test.ts`), not against github.com. Unverified end to end.
 * The MCP server is tested with raw JSON-RPC against both protocol eras, not with a real client (Claude, Cursor, MCP Inspector). Unverified.
 * No account-deletion endpoint, no email notices, no abuse heuristics beyond the limits above, no CORS.

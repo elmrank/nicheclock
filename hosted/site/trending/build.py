@@ -143,6 +143,50 @@ def stage_match(dest: Path, data: Path) -> dict | None:
         if (src / name).is_file():
             file, gz = _write_hashed(out, name, json.loads((src / name).read_text(encoding="utf-8")))
             info[key] = {"file": file, "gzip_bytes": gz}
+    info["shards"] = stage_shards(dest, data, manifest)
+    return info
+
+
+def stage_shards(dest: Path, data: Path, manifest: dict) -> dict:
+    """The same pool, concept index and events cut into shards of at most 150 KB (nicheclock/catalog/shard.py) for the Worker's profile
+    tools, under catalog-data/shards/ with fixed names (only the Worker reads them, through the assets binding, so they are not cached
+    as immutable). Blocked titles are dropped as for the files above. The page does not read them."""
+    sys.path.insert(0, str(REPO))
+    from nicheclock.catalog import shard
+    src = data / "match"
+    out = dest / "shards"
+    ok = lambda qid, label: not _blocked({"label": label, "qid": f"Q{qid}"})      # noqa: E731
+    concepts = json.loads((src / "concepts.json").read_text(encoding="utf-8"))
+    label_of = {r[0]: r[1] for r in concepts.get("labels", [])}
+    label_of.update({r[0]: r[1] for r in concepts["rows"]})
+    info: dict = {"cap_bytes": shard.SHARD_CAP, "regions": {}}
+    for iso in manifest["regions"]:
+        doc = json.loads((src / f"pool-{iso}.json").read_text(encoding="utf-8"))
+        rows = [r for r in doc["rows"] if ok(r[0], r[1])]
+        m = shard.build_pool(iso, rows, label_of, out, doc.get("date", ""))
+        info["regions"][iso] = {"rows": m["rows"], "shards": m["shards"], "max_shard_bytes": m["max_shard_bytes"]}
+    m = shard.build_concepts([r for r in concepts["rows"] if ok(r[0], r[1])], out, concepts["date"])
+    info["concepts"] = {"rows": m["rows"], "shards": m["shards"], "max_shard_bytes": m["max_shard_bytes"]}
+    ev_rows: list = []
+    try:
+        upcoming = json.loads((data / "upcoming.json").read_text(encoding="utf-8")).get("events", [])
+    except OSError:
+        upcoming = []
+    for ev in upcoming:
+        n = ev.get("niche")
+        if ev.get("qid") and n and ok(ev["qid"][1:], ev.get("title", "")):
+            ev_rows.append([int(ev["qid"][1:]), ev["title"], 0, 0, n.get("h", []), n.get("f", 0), ["e", {k: v for k, v in ev.items() if k != "niche"}]])
+    obs_meta: dict = {}
+    if (src / "observances.json").is_file():
+        obs = json.loads((src / "observances.json").read_text(encoding="utf-8"))
+        obs_meta = {k: obs[k] for k in ("lag_days", "source", "license", "recurrence") if k in obs}
+        for r in obs["rows"]:
+            if ok(r[0], r[1]):
+                ev_rows.append([r[0], r[1], 0, 0, r[6], r[7], ["o", r[2], r[3], r[4], r[5]]])
+    meta = json.loads((data / "meta.json").read_text(encoding="utf-8"))
+    obs_meta["categories"] = {c["id"]: c["label"] for c in meta.get("categories", [])}
+    m = shard.build_events(ev_rows, label_of, out, obs_meta)
+    info["events"] = {"rows": m["rows"], "shards": m["shards"], "max_shard_bytes": m["max_shard_bytes"]}
     return info
 
 

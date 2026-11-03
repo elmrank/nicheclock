@@ -12,6 +12,7 @@ export default defineConfig({
           bindings: {
             TEST_MIGRATIONS: migrations,
             KEY_SIGNUP: "on",   // wrangler.toml ships "off"; the key flow is tested with it on
+            SITE_GATE: "on",    // wrangler.toml ships "off" since the launch; the Basic gate is tested with it on
             GITHUB_CLIENT_ID: "test-client-id",
             GITHUB_CLIENT_SECRET: "test-client-secret",
             SESSION_SECRET: "test-session-secret-0123456789abcdef",

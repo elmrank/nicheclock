@@ -1,6 +1,8 @@
 export interface Env {
   DB: D1Database;
   BUCKET: R2Bucket;
+  /** Cloudflare rate-limiting binding (wrangler.toml [[ratelimits]]): 6 calls / 10 s per address, in front of the D1 counters (suggest-limits.ts). */
+  BURST?: RateLimit;
 
   // [vars] in wrangler.toml
   PUBLIC_BASE_URL: string;
@@ -22,6 +24,8 @@ export interface Env {
   /** Basic-auth password of the static site (gate.ts); the user name is BASIC_USER and has no default. */
   BASIC_PASSWORD?: string;
   BASIC_USER?: string;
+  /** Key of a Google Cloud project with billing OFF. When it is set, "Read my channel" is offered (POST /v1/suggest/youtube); never in the repo. */
+  YOUTUBE_API_KEY?: string;
 
   /** Workers static assets (site/public), reached only through gate.ts. */
   ASSETS: Fetcher;

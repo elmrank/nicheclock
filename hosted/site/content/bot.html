@@ -1,0 +1,32 @@
+path: /bot/
+title: nicheclock-suggest
+description: What the nicheclock-suggest user agent does: it reads one public site, once, when a person presses a button on the nicheclock page, and how to block it.
+section: legal
+---
+<h1>nicheclock-suggest</h1>
+<p>This page is for the owner of a website whose server log shows the user agent below. It says what the visit was and how to stop it.</p>
+<p><code>nicheclock-suggest/1.0 (+https://nicheclock.elmrank.com/bot; oss@elmrank.com)</code></p>
+
+<h2>What it is</h2>
+<p>The <strong>Your niche</strong> page of nicheclock has a button, <em>Read my site</em>. A person types the address of their own website and presses it. The nicheclock server then reads that site once to suggest topic words for their profile. There is no crawler that runs on its own: if no one presses the button, no request is made.</p>
+
+<h2>What one visit does</h2>
+<ol>
+  <li>It requests <code>/robots.txt</code> first and follows RFC 9309. If robots.txt answers with a server error, a 401, 403 or 429, or cannot be read, nothing else is requested. Any other 4xx answer (a 404, say) means there are no rules. It reads the group for <code>nicheclock-suggest</code>, else the group for <code>*</code>.</li>
+  <li>It reads one sitemap (at most 300 KB), from the <code>Sitemap:</code> line of robots.txt or from <code>/sitemap.xml</code>, <code>/sitemap_index.xml</code> or <code>/wp-sitemap.xml</code>.</li>
+  <li>It requests the first 64 KB of at most 8 pages from that sitemap, spread through it, only pages that robots.txt allows. It reads the page title.</li>
+  <li>It follows at most one redirect, and never to another host. It sends no cookies. It stops for good on a 403 or 429 answer and does not retry.</li>
+</ol>
+<p>That is at most 26 requests in one visit, one after the other, and no more than one visit to the same site a minute. A single visitor can press the button 5 times an hour.</p>
+
+<h2>What is kept</h2>
+<p>Nothing. The address, the sitemap and the titles are not stored or logged. The reply to the person holds only a short list of words and counts. See the <a href="/privacy/">privacy page</a>.</p>
+
+<h2>How to block it</h2>
+<p>Add this to the robots.txt of your site and the bot will not read it:</p>
+<pre><code>User-agent: nicheclock-suggest
+Disallow: /</code></pre>
+<p>You can also block by the user agent string above. To allow it only in part, use <code>Disallow</code> and <code>Allow</code> lines for that user agent as usual.</p>
+
+<h2>Contact</h2>
+<p>Questions, or a visit you did not expect: <a href="mailto:oss@elmrank.com">oss@elmrank.com</a>.</p>

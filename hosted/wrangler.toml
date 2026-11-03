@@ -32,12 +32,20 @@ database_name = "nicheclock"
 database_id = "REPLACE_WITH_YOUR_D1_ID"
 migrations_dir = "migrations"
 
+# Flood control for the three public "Sends ..." buttons (src/suggest-limits.ts): Cloudflare's free rate-limiting binding. It only knows windows
+# of 10 or 60 seconds, so the hourly and daily per-address caps are counters in D1 (see that file); this binding is the first, cheap gate in front of them.
+[[ratelimits]]
+name = "BURST"
+namespace_id = "17001"
+simple = { limit = 6, period = 10 }
+
 # R2: `wrangler r2 bucket create nicheclock-data`
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "nicheclock-data"
 
 # Secrets (never in this file): wrangler secret put GITHUB_CLIENT_ID | GITHUB_CLIENT_SECRET | SESSION_SECRET
+# YOUTUBE_API_KEY (optional): the key of a Google Cloud project with billing OFF; "Read my channel" appears on the profile page only when it is set.
 # Local dev: copy .dev.vars.example to .dev.vars.
 
 # Landing + docs: static files built by site/build.py (`--home trending`). The Worker runs first for every path: dynamic

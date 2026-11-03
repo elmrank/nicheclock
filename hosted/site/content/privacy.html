@@ -24,6 +24,18 @@ section: legal
 <p>The optional <strong>Your niche</strong> page keeps a profile (the topics you write about, a country, and anything else you type there) in this browser only, in <code>localStorage</code> under one key. It is never put in the address, so a copied link cannot carry it and the page counter above cannot see it. <strong>No profile data leaves your browser</strong>: the page downloads the same public data files as every visitor (the page, its scripts, the topic list and one list of Wikipedia pages for your country, all without a query string) and does the matching on your device. Typing a topic, saving, editing, switching profiles and exporting send nothing. The site has no copy of your profile, so it cannot restore it: Export JSON gives you a file to keep. Delete this profile removes it from the browser, and a private window forgets it when it closes. A shared computer keeps it until you delete it.</p>
 <p>To check this yourself, open the developer tools, choose Network, and press Show my niche: you will see GET requests for data files and none that carries what you typed.</p>
 
+<h3>The three buttons that send something</h3>
+<p>Three buttons on the Your niche page send one thing to nicheclock, only when you press them. Each sends only its own field, never the rest of the profile and never the field of another button.</p>
+<table>
+  <thead><tr><th scope="col">Button</th><th scope="col">What it sends</th><th scope="col">What happens next</th><th scope="col">Limit</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Look up a word</th><td>the word you typed</td><td>nicheclock looks in its own topic list first. A word that is not in it is sent to Wikidata (the word only, not your site or your profile).</td><td>20 an hour from one address</td></tr>
+    <tr><th scope="row">Read my site</th><td>the address of your site</td><td>nicheclock reads robots.txt, one sitemap and up to 8 page titles from that site, with the user agent <code>nicheclock-suggest</code> (<a href="/bot/">what it is and how to block it</a>), and returns a list of topic words. The words are not sent to anyone else.</td><td>5 an hour from one address; one read of the same site a minute</td></tr>
+    <tr><th scope="row">Read my channel (shown only when it is switched on)</th><td>your YouTube handle</td><td>nicheclock asks YouTube for the titles and tags of your latest 50 videos and returns a list of topic words.</td><td>5 a day from one address; 2,000 units of the free YouTube quota a day for everybody</td></tr>
+  </tbody>
+</table>
+<p>The address, the word, the handle, the pages read and the replies are not stored and are not written to any log. The code of these handlers has no logging call, and a test checks that. For the limits, nicheclock keeps counters under a keyed hash of your IP address and the hour or day (and of the site name and the minute), made with a secret that is not in the code. A counter cannot be turned back into an address or a site and is deleted when its window ends. Cloudflare's own network logs, described below, still see the request as they see any page. AI agents that use the hosted MCP tools with a key send a profile in the call; it is used in memory for that call and dropped.</p>
+
 <h2>Network logs</h2>
 <p>Cloudflare serves the site and keeps its own network logs, which include IP addresses, under its own policies. We don't add to them, and we don't sell or share anything.</p>
 

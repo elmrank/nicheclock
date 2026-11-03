@@ -7,8 +7,10 @@
    Writes DIR/nicheclock-privacy.har and DIR/nicheclock-privacy.json (default /tmp/nicheclock-privacy). Exit code 1 on any failure.
 
    Allowed by the criterion (no user profile leaves the browser): GETs of the page's own static files, including the pool and the concept index (no query
-   string, no profile in them). Everything else, in particular any POST, any other origin, any URL, header, body or frame that holds
-   a sentinel, fails. The three "Sends ..." buttons (read my site, read my channel, look up a word) are not part of this build. */
+   string, no profile in them), and the one status GET of the Worker. Until the buttons are pressed, everything else, in particular any
+   POST, any other origin, any URL, header, body or frame that holds a sentinel, fails. Then the three "Sends ..." buttons (look up a word,
+   read my site, read my channel) are pressed once each against a stubbed Worker: exactly three POSTs, each with only its own field
+   ({text}, {url} or {channel}), and none holds a sentinel that belongs to another field. `--live URL` runs it against a deployed site. */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -79,6 +81,7 @@ client.on("Network.requestWillBeSent", (e) => {
   entries.set(e.requestId, { startedDateTime: new Date().toISOString(), request: { method: e.request.method, url: e.request.url, httpVersion: "HTTP/1.1", headers: Object.entries(e.request.headers).map(([name, value]) => ({ name, value: String(value) })),
     queryString: [...new URL(e.request.url).searchParams].map(([name, value]) => ({ name, value })), cookies: [], headersSize: -1, bodySize: e.request.postData ? e.request.postData.length : 0, postData: e.request.postData ? { mimeType: "text/plain", text: e.request.postData } : undefined },
     response: { status: 0, statusText: "", httpVersion: "HTTP/1.1", headers: [], cookies: [], content: { size: 0, mimeType: "" }, redirectURL: "", headersSize: -1, bodySize: -1 }, cache: {}, timings: { send: 0, wait: 0, receive: 0 }, time: 0 });
+  entries.get(e.requestId)._step = currentStep;
   timeline.push({ step: currentStep, method: e.request.method, url: e.request.url });
 });
 client.on("Network.requestWillBeSentExtraInfo", (e) => { const en = entries.get(e.requestId); if (en) en.extra = Object.entries(e.headers).map(([name, value]) => ({ name, value: String(value) })); });
@@ -174,20 +177,54 @@ try {
   await del();
   const afterDelete = await page.evaluate(() => ({ keys: Object.keys(localStorage), cookie: document.cookie }));
 
+  /* the three buttons: the Worker is stubbed (a request interceptor answers the four URLs), so what is checked is what leaves the browser */
+  step("buttons");
+  const STUBS = {
+    "/v1/suggest/status": { resolve: true, site: true, youtube: true },
+    "/v1/resolve": { ok: true, topic: { qid: "Q718", label: "chess", description: "abstract strategy game", confidence: 1, ambiguous: false, alternatives: [], source: "nicheclock-list" } },
+    "/v1/suggest/site": { ok: true, pages_in_sitemap: 100, pages_read: 40, titles_read: 8, phrases: [{ text: "chess", pages_with: 7 }] },
+    "/v1/suggest/youtube": { ok: true, videos_read: 12, phrases: [{ text: "chess", pages_with: 5 }] }
+  };
+  await page.setRequestInterception(true);
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    const stub = u.origin === ORIGIN ? STUBS[u.pathname] : null;
+    if (stub && (r.method() === "POST" || u.pathname === "/v1/suggest/status")) r.respond({ status: 200, contentType: "application/json", body: JSON.stringify(stub) }); else r.continue();
+  });
+  await page.reload({ waitUntil: "networkidle0" });
+  await page.waitForSelector("#topic");
+  await page.type("#topic", SENTINELS.topic);
+  await page.waitForSelector('[data-fk="lookup"]:not([hidden])');
+  const buttonTexts = { lookup: await page.$eval('[data-fk="lookup"]', (e) => e.textContent) };
+  await page.click('[data-fk="lookup"]');
+  await page.waitForSelector(".found .opt");
+  await page.type("#site", SENTINELS.site);
+  buttonTexts.site = await page.$eval('[data-fk="read-site"]', (e) => e.textContent);
+  await page.click('[data-fk="read-site"]');
+  await page.waitForSelector(".foundlist");
+  await page.type('[aria-label="YouTube channel"]', SENTINELS.handle);
+  await page.waitForSelector('[data-fk="read-channel"]:not([hidden])');
+  buttonTexts.channel = await page.$eval('[data-fk="read-channel"]', (e) => e.textContent);
+  await page.click('[data-fk="read-channel"]');
+  await page.waitForFunction(() => /channel/.test((document.querySelector(".found h3") || {}).textContent || ""), { timeout: 5000 });
+  await new Promise((r) => setTimeout(r, 300));
+
   /* ---- assertions ---- */
   const all = Array.from(entries.values());
+  const quiet = all.filter((en) => en._step !== "buttons");
+  const sentinelHost = (s) => (s.startsWith("http") ? new URL(s).hostname.toLowerCase() : s.toLowerCase());
   const blob = (en) => JSON.stringify([en.request.url, en.request.headers, en.extra || [], en.request.postData || ""]).toLowerCase();
   check("a click on Your niche before the data files have loaded still opens the profile page (hash route vs. app ready)", () => { assert.ok(racePassed); });
   check("before the niche is opened: no pool, no concept file, no niche module", () => { assert.equal(before.pool, 0); assert.deepEqual(before.match, []); assert.equal(before.niche, false); });
   check("the profile page fetches the topic list but no pool", () => { assert.equal(afterProfile.pool, 0); assert.ok(afterProfile.match.some((n) => /^concepts\./.test(n))); });
   check("saving fetches exactly one pool (the profile's country)", () => { assert.equal(afterSave.pool, 1); });
-  check("every request is a GET to the page's own origin", () => {
-    const bad = all.filter((en) => en.request.method !== "GET" || new URL(en.request.url).origin !== ORIGIN).map((en) => en.request.method + " " + en.request.url);
+  check("before the buttons: every request is a GET to the page's own origin", () => {
+    const bad = quiet.filter((en) => en.request.method !== "GET" || new URL(en.request.url).origin !== ORIGIN).map((en) => en.request.method + " " + en.request.url);
     assert.deepEqual(bad, []);
   });
   check("the server saw only GETs (and the same URLs)", () => { assert.deepEqual(serverLog.filter((s) => s.method !== "GET").map((s) => s.method + " " + s.url), []); });
   check("pool and concept GETs carry no query string", () => { all.filter((en) => /catalog-data\/match\//.test(en.request.url)).forEach((en) => assert.equal(new URL(en.request.url).search, "", en.request.url)); });
-  check("no sentinel in any request URL, header or body (browser view)", () => { ALL.forEach((s) => all.forEach((en) => assert.ok(!blob(en).includes(s.toLowerCase()), s + " in " + en.request.url))); });
+  check("no sentinel in any request URL, header or body before the buttons are pressed (browser view)", () => { ALL.forEach((s) => quiet.forEach((en) => assert.ok(!blob(en).includes(s.toLowerCase()), s + " in " + en.request.url))); });
   check("no sentinel in anything the server received", () => { ALL.forEach((s) => serverLog.forEach((r) => assert.ok(!JSON.stringify(r).toLowerCase().includes(s.toLowerCase()), s + " in " + r.url))); });
   check("no WebSocket was opened and no frame holds a sentinel", () => { assert.deepEqual(frames, []); });
   check("no cookie is set or sent", () => {
@@ -199,7 +236,34 @@ try {
   check("the exported file holds the profile (so the sentinels were really entered)", () => { assert.ok(exported.includes(SENTINELS.name) && exported.includes(SENTINELS.site) && exported.includes(SENTINELS.handle)); });
   check("Delete removes one profile; deleting the last clears the key", () => { assert.equal(afterFirstDelete, 1); assert.deepEqual(afterDelete.keys, []); });
   check("the CSP blocked nothing and the page raised no error", () => { assert.deepEqual(cspViolations, []); assert.deepEqual(pageErrors, []); });
-  check("the build has no 'Sends' button (read my site / channel / look up): they are not shipped", () => { assert.ok(!all.some((en) => /suggest|resolve/.test(en.request.url))); });
+  const pressed = all.filter((en) => en._step === "buttons");
+  const posts = pressed.filter((en) => en.request.method === "POST");
+  const OWN = [["text", SENTINELS.topic, "/v1/resolve"], ["url", SENTINELS.site, "/v1/suggest/site"], ["channel", SENTINELS.handle, "/v1/suggest/youtube"]];
+  check("the three buttons are there, and each says what it sends", () => {
+    assert.match(buttonTexts.lookup, /sends this word to nicheclock/i);
+    assert.match(buttonTexts.site, /sends this address to nicheclock/i);
+    assert.match(buttonTexts.channel, /sends this handle to nicheclock/i);
+  });
+  check("pressing the three buttons makes exactly three POSTs, one per endpoint, in order", () => { assert.deepEqual(posts.map((p) => new URL(p.request.url).pathname), OWN.map((o) => o[2])); });
+  check("each POST carries only its own field: {text}, {url} or {channel}", () => {
+    posts.forEach((p, i) => { const body = JSON.parse(p.request.postData.text); assert.deepEqual(Object.keys(body), [OWN[i][0]]); assert.equal(body[OWN[i][0]], OWN[i][1]); });
+  });
+  check("no POST holds a sentinel that belongs to another field (URL, header or body)", () => {
+    posts.forEach((p, i) => ALL.filter((s) => !OWN[i][1].toLowerCase().includes(s.toLowerCase()) && !s.toLowerCase().includes(sentinelHost(OWN[i][1]))).forEach((s) => assert.ok(!blob(p).includes(s.toLowerCase()), s + " in the " + OWN[i][2] + " POST")));
+  });
+  check("the POSTs are JSON to the page's own origin, with no query string and no cookie", () => {
+    posts.forEach((p) => {
+      assert.equal(new URL(p.request.url).origin, ORIGIN); assert.equal(new URL(p.request.url).search, "");
+      assert.match((p.request.headers.find((h) => h.name.toLowerCase() === "content-type") || {}).value || "", /^application\/json/);
+      assert.ok(!(p.extra || []).some((h) => h.name.toLowerCase() === "cookie"));
+    });
+    pressed.filter((en) => en.request.method !== "POST").forEach((en) => { assert.equal(en.request.method, "GET"); assert.equal(new URL(en.request.url).origin, ORIGIN); assert.equal(new URL(en.request.url).search, ""); });
+  });
+  check("before the buttons: no POST at all, and the only call to the Worker is the status GET", () => {
+    assert.deepEqual(quiet.filter((en) => en.request.method !== "GET").map((en) => en.request.method + " " + en.request.url), []);
+    const worker = quiet.filter((en) => /\/v1\//.test(en.request.url)).map((en) => en.request.method + " " + new URL(en.request.url).pathname);
+    assert.ok(worker.length > 0 && worker.every((w) => w === "GET /v1/suggest/status"), worker.join(", "));
+  });
 
   const har = { log: { version: "1.2", creator: { name: "nicheclock test-privacy.js", version: "1" }, pages: [], entries: all.map((en) => { const { extra, ...e } = en; return e; }) } };
   fs.writeFileSync(path.join(OUT, "nicheclock-privacy.har"), JSON.stringify(har, null, 1));

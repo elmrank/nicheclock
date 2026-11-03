@@ -20,6 +20,7 @@ import type { GithubWindow } from "./catalog";
 import type { Env, KeyRow } from "./env";
 import { ApiError, byteLength } from "./http";
 import { createJob } from "./jobs";
+import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
 
 export const MCP_SPEC_VERSION = "2026-07-28";
 export const LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26"] as const;
@@ -33,7 +34,9 @@ export const SERVER_INFO = { name: "nicheclock-hosted", title: "nicheclock", ver
 const INSTRUCTIONS =
   "Niche trend radar. trends_for_niche(niche, days) and upcoming(niche, days) take a niche id such as " +
   "'birdwatching' (an unknown id returns the list of valid ids); niche_from_url(url) queues a custom niche " +
-  "(ready within about a day; call it again with the same url to see its status, then use the returned niche id).";
+  "(ready within about a day; call it again with the same url to see its status, then use the returned niche id). " +
+  "trends_for_profile(profile) and upcoming_for_profile(profile) match a nicheclock profile (topics as Wikidata ids or words, a region) against the " +
+  "rising Wikipedia pages and dated events; resolve_topic(text) finds the id of a word. The profile travels in the call and is not kept.";
 
 const TOOLS = [
   {
@@ -86,6 +89,62 @@ const TOOLS = [
       additionalProperties: false,
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: "trends_for_profile",
+    title: "Rising Wikipedia pages that fit a profile",
+    description:
+      "Rising and steady Wikipedia pages (last full day, per country) that fit a nicheclock profile, best fit first, deduplicated by Wikidata id. " +
+      "Each row has fit (0 to 1), why, the relations that scored (kind, via, score), trend, volume with its unit, source, source_url and license. " +
+      "The profile (schema nicheclock.profile/1) travels in the call and is not kept: {topics:[{qid:'Q718',label:'chess',role:'main'}|{text:'chess'}], region:'US'}. " +
+      "A topic given as text is looked up in the concept list only; texts that are not in it come back in unresolved (pass a qid, or call resolve_topic). " +
+      "Pools exist for US, IN, BR and ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        profile: { type: "object", description: "nicheclock.profile/1: topics (1 to 8, each {qid,label?,role?} or {text}), region (US, IN, BR, ID), optional avoid [{qid}]" },
+        limit: { type: "integer", minimum: 1, maximum: 50, default: 20, description: "Number of rows" },
+        min_fit: { type: "number", minimum: 0.35, maximum: 1, default: 0.5, description: "Lowest fit returned" },
+      },
+      required: ["profile"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: "upcoming_for_profile",
+    title: "Dated events and observances that fit a profile",
+    description:
+      "Dated events (Wikidata) and yearly observances (next date of the Wikidata rule) that fit a nicheclock profile, soonest first, each with publish_by " +
+      "and, when the profile has cadence.days, your_slot (the latest usual day before publish_by). Holidays and Federal Register notices have no Wikidata id and are not matched.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        profile: { type: "object", description: "nicheclock.profile/1, as for trends_for_profile; cadence.days (monday..sunday) adds your_slot" },
+        days: { type: "integer", minimum: 1, maximum: 365, default: 30, description: "Look-ahead window in days" },
+        limit: { type: "integer", minimum: 1, maximum: 50, default: 20, description: "Number of events" },
+      },
+      required: ["profile"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  },
+  {
+    name: "resolve_topic",
+    title: "Find the Wikidata id of a topic word",
+    description:
+      "Turn a word or short phrase into a Wikidata id for a profile. Reads the nicheclock concept list first; only a word that is not in it is sent to Wikidata " +
+      "(this is the only profile tool that calls Wikidata). Returns qid, label, description, confidence, ambiguous and alternatives.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "The word or short phrase, for example 'chess'" },
+        context: { type: "string", description: "Optional words about the site, used to prefer the matching meaning" },
+      },
+      required: ["text"],
+      additionalProperties: false,
+    },
+    annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
   },
   {
     name: "github_rising",
@@ -206,6 +265,9 @@ async function callTool(env: Env, key: KeyRow, name: string, args: Json, now: Da
       const language = typeof args.language === "string" && args.language.trim() ? args.language.trim() : null;
       return { result: await getGithubRising(env, key, window as GithubWindow, language, limit), isError: false };
     }
+    if (name === "trends_for_profile") return { result: await trendsForProfile(env, args), isError: false };
+    if (name === "upcoming_for_profile") return { result: await upcomingForProfile(env, args, now), isError: false };
+    if (name === "resolve_topic") return { result: await resolveTopic(env, args), isError: false };
     if (name === "niche_from_url") {
       const { job, created } = await createJob(env, key, args.url, now);
       return { result: { job, created }, isError: false };

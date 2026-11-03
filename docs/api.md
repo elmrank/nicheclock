@@ -104,3 +104,20 @@ A trends response looks like this (a shortened example, not live data):
 ```
 
 Custom niches are built by a batch job on our side, not live, so allow up to a day. `niche_from_url` in the MCP server does the same thing.
+
+## Match a profile (agents)
+
+Three more routes take a small profile in the request body instead of a niche id, and keep nothing: the profile is used in memory for the call and dropped. They answer from the Wikipedia pageview pools of the United States, India, Brazil and Indonesia (`region` is one of `US`, `IN`, `BR`, `ID`) and from Wikidata events, and the same three are MCP tools (`trends_for_profile`, `upcoming_for_profile`, `resolve_topic`).
+
+| Endpoint | Body | Returns |
+|---|---|---|
+| `POST /v1/profile/trends` | `{"profile": {...}, "limit": 20, "min_fit": 0.5}` | Rising and steady pages that fit the profile, best fit first, one row per Wikidata id, each with `fit` (0 to 1), `why`, the `relations` that scored, `volume` with its unit, `source_url` and `license`. `limit` is 1 to 50, `min_fit` 0.35 to 1. |
+| `POST /v1/profile/upcoming` | `{"profile": {...}, "days": 30, "limit": 20}` | Dated events and yearly observances that fit, soonest first, with `publish_by` and, when the profile has `cadence.days`, `your_slot`. `days` is 1 to 365. |
+| `POST /v1/profile/resolve` | `{"text": "chess", "context": "a blog about board games"}` | The Wikidata id, label and description for a word, with `confidence`, `ambiguous` and `alternatives`. |
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $NICHECLOCK_KEY" -H "Content-Type: application/json" \
+  -d '{"profile": {"topics": [{"text": "chess"}], "region": "US"}, "limit": 5}' "$BASE/v1/profile/trends"
+```
+
+The profile has `topics` (1 to 8, each `{"qid": "Q718", "label": "chess", "role": "main"}` or just `{"text": "chess"}`, which is looked up in nicheclock's topic list and returned in `unresolved` when it is not there), `region`, and optionally `avoid` (ids whose pages are dropped) and `cadence` (`days` of the week, for `your_slot`). A call is limited to 8 KB of profile. These calls count against the same quota as the others.

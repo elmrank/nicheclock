@@ -1,0 +1,627 @@
+{
+ "date": "2026-11-02",
+ "data_day": "2026-11-01 (Wikimedia per-country pageviews)",
+ "question": "Would a site about <niche> plausibly publish a page about this topic for its readers? Borderline counts as no.",
+ "method": "Re-run for the Worker tools. The lists are the top 20 rows returned by POST /v1/profile/trends (trends_for_profile) for the three sample profiles in the United States, India and Brazil, served by the built shards of the real 2026-11-01 data (the same Worker code as production, run with `wrangler dev --local`). The matcher is match.js, so the lists equal the page's lists (checked: 8 of 9 lists identical to the browser's top 50 at fit 0.35 and above; the ninth lacks 4 title-only rows at 0.40, see docs/personalization.md). Each niche's distinct rows were given alphabetically, with only the topic name and its Wikidata description and the niche, to one model call (`completion`, default model, no tools or history) that answered true or false per row. The typed judge (`judge_batch`) was tried first and was unavailable (its provider rejected the account), so it is a model call, not an independent human or subagent. Same rule as before: borderline counts as no.",
+ "profiles": {
+  "chess": "chess (main), chess opening",
+  "birdwatching": "birdwatching (main), bird",
+  "sourdough": "sourdough (main), sourdough bread, bread"
+ },
+ "results": [
+  {
+   "niche": "chess",
+   "region": "US",
+   "rows": 20,
+   "on_niche": 19,
+   "share": "95%",
+   "met": "yes"
+  },
+  {
+   "niche": "chess",
+   "region": "IN",
+   "rows": 8,
+   "on_niche": 7,
+   "share": "88%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "chess",
+   "region": "BR",
+   "rows": 2,
+   "on_niche": 1,
+   "share": "50%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "birdwatching",
+   "region": "US",
+   "rows": 20,
+   "on_niche": 18,
+   "share": "90%",
+   "met": "yes"
+  },
+  {
+   "niche": "birdwatching",
+   "region": "IN",
+   "rows": 2,
+   "on_niche": 2,
+   "share": "100%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "birdwatching",
+   "region": "BR",
+   "rows": 2,
+   "on_niche": 0,
+   "share": "0%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "sourdough",
+   "region": "US",
+   "rows": 9,
+   "on_niche": 3,
+   "share": "33%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "sourdough",
+   "region": "IN",
+   "rows": 1,
+   "on_niche": 0,
+   "share": "0%",
+   "met": "no, fewer than 10 rows"
+  },
+  {
+   "niche": "sourdough",
+   "region": "BR",
+   "rows": 0,
+   "on_niche": 0,
+   "share": "none",
+   "met": "no"
+  }
+ ],
+ "reply_bytes_top20": {
+  "chess|US": 10425,
+  "chess|IN": 4289,
+  "chess|BR": 1235,
+  "birdwatching|US": 9079,
+  "birdwatching|IN": 1113,
+  "birdwatching|BR": 1097,
+  "sourdough|US": 4374,
+  "sourdough|IN": 604,
+  "sourdough|BR": 154
+ },
+ "lists": {
+  "chess|US": [
+   {
+    "qid": "Q177310",
+    "label": "Boris Spassky",
+    "description": "Russian chess player (1937–2025)",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q596416",
+    "label": "World Chess Championship 1972",
+    "description": "",
+    "fit": 0.88,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q529393",
+    "label": "Miyoko Watai",
+    "description": "Japanese women's chess champion, and the general secretary of the Japa",
+    "fit": 0.86,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q41314",
+    "label": "Bobby Fischer",
+    "description": "American chess player (1943–2008)",
+    "fit": 0.74,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1351113",
+    "label": "William Lombardy",
+    "description": "",
+    "fit": 0.77,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q15890165",
+    "label": "Life of a King",
+    "description": "",
+    "fit": 0.8,
+    "why": "About chess, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q105589",
+    "label": "Paul Morphy",
+    "description": "",
+    "fit": 0.86,
+    "why": "Chess theoretician: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q17075967",
+    "label": "Fischer–Spassky",
+    "description": "",
+    "fit": 0.8,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q724903",
+    "label": "Chess960",
+    "description": "",
+    "fit": 0.98,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q124485722",
+    "label": "World Chess Championship 2026",
+    "description": "world chess championship match",
+    "fit": 0.88,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q180636",
+    "label": "Tigran Petrosian",
+    "description": "",
+    "fit": 0.74,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q131674",
+    "label": "Anatoly Karpov",
+    "description": "",
+    "fit": 0.72,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q718",
+    "label": "chess",
+    "description": "strategy board game",
+    "fit": 1,
+    "why": "This is the topic you follow: chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q190042",
+    "label": "World Chess Championship",
+    "description": "",
+    "fit": 0.95,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q205730",
+    "label": "en passant",
+    "description": "",
+    "fit": 0.92,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q105269",
+    "label": "Grandmaster",
+    "description": "title in chess awarded by FIDE",
+    "fit": 0.92,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1690563",
+    "label": "FIDE titles",
+    "description": "",
+    "fit": 0.92,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "description": "Norwegian chess player (born 1990)",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q5218240",
+    "label": "Daniel Naroditsky",
+    "description": "",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q59137809",
+    "label": "Hans Niemann",
+    "description": "",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   }
+  ],
+  "chess|IN": [
+   {
+    "qid": "Q131304758",
+    "label": "Chess World Cup 2025",
+    "description": "",
+    "fit": 0.95,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q27532037",
+    "label": "Javokhir Sindarov",
+    "description": "",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q124485722",
+    "label": "World Chess Championship 2026",
+    "description": "world chess championship match",
+    "fit": 0.88,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q718",
+    "label": "chess",
+    "description": "strategy board game",
+    "fit": 1,
+    "why": "This is the topic you follow: chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q56026072",
+    "label": "Gukesh D",
+    "description": "",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q26703041",
+    "label": "Praggnanandhaa",
+    "description": "",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "description": "Norwegian chess player (born 1990)",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q99732629",
+    "label": "Samay Raina",
+    "description": "",
+    "fit": 0.72,
+    "why": "Chess player: you follow chess.",
+    "on_niche": false
+   }
+  ],
+  "chess|BR": [
+   {
+    "qid": "Q106807",
+    "label": "Magnus Carlsen",
+    "description": "Norwegian chess player (born 1990)",
+    "fit": 0.92,
+    "why": "Chess player: you follow chess.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q705525",
+    "label": "Peter Thiel",
+    "description": "German-American entrepreneur and venture capitalist (born 1967)",
+    "fit": 0.65,
+    "why": "Sport: chess, which you follow.",
+    "on_niche": false
+   }
+  ],
+  "birdwatching|US": [
+   {
+    "qid": "Q177856",
+    "label": "Griffon Vulture",
+    "description": "",
+    "fit": 0.75,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q8021345",
+    "label": "owl",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q43794",
+    "label": "Meleagris",
+    "description": "",
+    "fit": 0.65,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q5113",
+    "label": "bird",
+    "description": "class of vertebrates characterized by wings, a feather-covered body an",
+    "fit": 0.8,
+    "why": "This is the topic you follow: bird.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2086368",
+    "label": "Pelagornis",
+    "description": "",
+    "fit": 0.53,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q93208",
+    "label": "Emu",
+    "description": "",
+    "fit": 0.78,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q1137288",
+    "label": "Blakiston`s Eagle Owl",
+    "description": "",
+    "fit": 0.6,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q8154335",
+    "label": "Alcedinidae",
+    "description": "",
+    "fit": 0.58,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q503804",
+    "label": "Grus canadensis",
+    "description": "",
+    "fit": 0.6,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q3736439",
+    "label": "duck",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q457471",
+    "label": "Red-tailed Hawk",
+    "description": "",
+    "fit": 0.67,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2092297",
+    "label": "eagle",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q201251",
+    "label": "peafowl",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q123120",
+    "label": "vulture",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bird, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q126167",
+    "label": "bearded vulture",
+    "description": "",
+    "fit": 0.67,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q27074911",
+    "label": "Downy Woodpecker",
+    "description": "",
+    "fit": 0.5,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q43642",
+    "label": "Apteryx",
+    "description": "",
+    "fit": 0.65,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2576337",
+    "label": "Struthio",
+    "description": "",
+    "fit": 0.65,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q223359",
+    "label": "Rio",
+    "description": "2011 American animated film directed by Carlos Saldanha",
+    "fit": 0.64,
+    "why": "About bird, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q26844",
+    "label": "Wild Turkey",
+    "description": "",
+    "fit": 0.62,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   }
+  ],
+  "birdwatching|IN": [
+   {
+    "qid": "Q477133",
+    "label": "Indian Roller",
+    "description": "",
+    "fit": 0.55,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q29564928",
+    "label": "Cygnus",
+    "description": "",
+    "fit": 0.55,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": true
+   }
+  ],
+  "birdwatching|BR": [
+   {
+    "qid": "Q1071983",
+    "label": "Penelope",
+    "description": "",
+    "fit": 0.65,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q43502",
+    "label": "Dodo",
+    "description": "",
+    "fit": 0.53,
+    "why": "Belongs to the group bird (taxon), which you follow.",
+    "on_niche": false
+   }
+  ],
+  "sourdough|US": [
+   {
+    "qid": "Q3634389",
+    "label": "Baati",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q8031737",
+    "label": "Wonder Bread",
+    "description": "",
+    "fit": 0.72,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q3360560",
+    "label": "sourdough bread",
+    "description": "bread made with a sourdough starter",
+    "fit": 0.97,
+    "why": "This is the topic you follow: sourdough bread.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q2446322",
+    "label": "knish",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q7214426",
+    "label": "frybread",
+    "description": "",
+    "fit": 0.61,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q1142029",
+    "label": "crumpet",
+    "description": "",
+    "fit": 0.61,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q207104",
+    "label": "sacramental bread",
+    "description": "",
+    "fit": 0.61,
+    "why": "Use of bread: you follow bread.",
+    "on_niche": false
+   },
+   {
+    "qid": "Q7802",
+    "label": "bread",
+    "description": "baked food made of flour, water and other ingredients",
+    "fit": 0.8,
+    "why": "This is the topic you follow: bread.",
+    "on_niche": true
+   },
+   {
+    "qid": "Q836891",
+    "label": "hardtack",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   }
+  ],
+  "sourdough|IN": [
+   {
+    "qid": "Q5477096",
+    "label": "rusk",
+    "description": "",
+    "fit": 0.67,
+    "why": "A kind of bread, which you follow.",
+    "on_niche": false
+   }
+  ],
+  "sourdough|BR": []
+ }
+}

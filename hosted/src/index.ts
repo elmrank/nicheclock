@@ -9,9 +9,11 @@ import { ApiError, byteLength, dayOf, errorReply, jsonReply, toResponse, type Re
 import { createJob, getJob, listJobsAdmin, updateJobAdmin } from "./jobs";
 import { authenticate, listOwnKeys, revokeVisible } from "./keys";
 import { handleMcp, originAllowed } from "./mcp";
+import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
 import { enforce, record } from "./quota";
 import * as beacon from "./beacon";
 import { serveStatic } from "./gate";
+import { handleSuggest, isSuggestPath } from "./suggest";
 import * as github from "./github";
 
 interface Ctx {
@@ -48,6 +50,11 @@ async function jsonBody(req: Request): Promise<unknown> {
   } catch {
     throw new ApiError(400, "invalid_json", "body is not valid JSON");
   }
+}
+
+function objectBody(v: unknown): Record<string, unknown> {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) throw new ApiError(400, "invalid_json", "body must be a JSON object");
+  return v as Record<string, unknown>;
 }
 
 const routes: Route[] = [
@@ -102,6 +109,24 @@ const routes: Route[] = [
     re: /^\/v1\/jobs\/(?<id>[^/]+)$/,
     endpoint: "GET /v1/jobs/:id",
     handler: async (c) => jsonReply({ job: await getJob(c.env, c.key, c.params.id as string) }),
+  },
+  {
+    method: "POST",
+    re: /^\/v1\/profile\/trends$/,
+    endpoint: "POST /v1/profile/trends",
+    handler: async (c) => jsonReply(await trendsForProfile(c.env, objectBody(await jsonBody(c.req)))),
+  },
+  {
+    method: "POST",
+    re: /^\/v1\/profile\/upcoming$/,
+    endpoint: "POST /v1/profile/upcoming",
+    handler: async (c) => jsonReply(await upcomingForProfile(c.env, objectBody(await jsonBody(c.req)), c.now)),
+  },
+  {
+    method: "POST",
+    re: /^\/v1\/profile\/resolve$/,
+    endpoint: "POST /v1/profile/resolve",
+    handler: async (c) => jsonReply(await resolveTopic(c.env, objectBody(await jsonBody(c.req)))),
   },
   {
     method: "GET",
@@ -283,6 +308,7 @@ async function route(req: Request, env: Env): Promise<Response> {
     const rev = /^\/keys\/(?<id>k_[0-9a-f]{16})\/revoke$/.exec(p);
     if (rev && req.method === "POST") return await github.revokeKeyAction(req, env, rev.groups?.id as string);
     if (p === "/mcp") return await handleMcpRoute(req, env, now);
+    if (isSuggestPath(p)) return await handleSuggest(req, env, p, now);     // the public buttons of the profile page: no key, limits per address
     if (p.startsWith("/v1/")) return await handleApi(req, env, url, now);
     return await serveStatic(req, env);
   } catch (e) {

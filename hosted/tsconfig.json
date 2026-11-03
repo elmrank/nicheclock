@@ -10,6 +10,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "allowJs": true,       // site/trending/match.js, profile.js and phrases.js are shared with the page: the Worker imports them (types are inferred, not checked)
+    "checkJs": false,
     "isolatedModules": true
   },
   "include": ["src", "test"]

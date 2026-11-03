@@ -1,0 +1,1 @@
+{"schema":1,"name":"events","shards":1,"units":92,"bytes":14545,"max_shard_bytes":14555,"shard_cap":150000,"rows":24,"chunks":{},"meta":{"lag_days":28,"source":"wikidata","license":"CC0 (Wikidata)","recurrence":"yearly rule (Wikidata P837)","categories":{"sports":"Sports","other":"Other"}}}

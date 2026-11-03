@@ -78,7 +78,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result._meta["io.modelcontextprotocol/serverInfo"].name).toBe("nicheclock-hosted");
   });
 
-  it("tools/list returns the four tools with schemas, in a stable order", async () => {
+  it("tools/list returns the seven tools with schemas, in a stable order", async () => {
     const k = await mkKey();
     const res = await modern(k.key, "tools/list");
     expect(res.status).toBe(200);
@@ -89,7 +89,7 @@ describe(`MCP ${MCP_SPEC_VERSION} (stateless, per-request _meta)`, () => {
     expect(r.result.resultType).toBe("complete");
     expect(r.result.ttlMs).toBeGreaterThan(0);
     expect(r.result.cacheScope).toBeTruthy();
-    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "github_rising"]);
+    expect(r.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     for (const t of r.result.tools) {
       expect(t.inputSchema.type).toBe("object");
       expect(t.description.length).toBeGreaterThan(20);
@@ -216,7 +216,7 @@ describe("MCP earlier revisions (initialize handshake, still stateless)", () => 
     const k = await mkKey();
     const h = { "mcp-protocol-version": "2025-06-18" };
     const list = await json(await legacy(k.key, "tools/list", {}, h));
-    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "github_rising"]);
+    expect(list.result.tools.map((t: { name: string }) => t.name)).toEqual(["trends_for_niche", "upcoming", "niche_from_url", "trends_for_profile", "upcoming_for_profile", "resolve_topic", "github_rising"]);
     expect(list.result.resultType).toBeUndefined();
     const call1 = await json(await legacy(k.key, "tools/call", { name: "trends_for_niche", arguments: { niche: "birdwatching" } }, h, 2));
     expect(call1.result.isError).toBe(false);

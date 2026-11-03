@@ -18,6 +18,29 @@ function getJson(url) {
 export function matchInfo(meta) { return (meta && meta.match) || null; }
 export function poolRegions(meta) { const m = matchInfo(meta); return m ? Object.keys(m.regions || {}) : []; }
 
+/* ---------- the three buttons that send something to nicheclock (docs/personalization.md, "What each button sends") ----------
+   Each POST carries exactly its own field, {text}, {url} or {channel}: same origin, no cookie, no query string, only after a click. */
+function post(path, body) {
+  const bad = { ok: false, body: {} };
+  return fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+    .then((r) => r.json().then((j) => ({ ok: r.ok, body: j || {} }), () => bad), () => bad);
+}
+const fail = (r) => (r.body && r.body.error && r.body.error.message) || "That did not work just now. Type your topics instead.";
+let statusP = null;
+function loadStatus() {
+  if (!statusP) statusP = fetch("/v1/suggest/status").then((r) => (r.ok ? r.json() : Promise.reject(new Error("status")))).catch(() => { statusP = null; return {}; });
+  return statusP;
+}
+/* name (label or alias, lower case) -> {row: the most viewed concept row of the topic list with that name, exact: the name is its label, not an alias} */
+function conceptsByName(ix) {
+  if (!ix.names) {
+    ix.names = new Map();
+    const put = (n, r, exact) => { const cur = ix.names.get(n); if (!cur || (exact && !cur.exact) || (exact === cur.exact && r[3] > cur.row[3])) ix.names.set(n, { row: r, exact }); };
+    ix.rows.forEach((r, i) => { put(ix.lower[i], r, true); ix.alias[i].forEach((a) => put(a, r, false)); });
+  }
+  return ix.names;
+}
+
 function loadConcepts(meta) {
   if (!cache.concepts) {
     cache.concepts = getJson(matchInfo(meta).concepts.file).then((doc) => {
@@ -87,9 +110,21 @@ export function suggest(index, text, skip) {
 function privacyBox(h) {
   return h("div", { class: "privacy", role: "note" }, [
     h("b", { text: "Stays in this browser. " }),
-    "The profile is stored on this device only (localStorage, no cookie). Nothing about it is sent to nicheclock: the page downloads the same public data files as everyone and matches them here. Delete it here when you are done; a private window forgets it when it closes. ",
+    "The profile is stored on this device only (localStorage, no cookie). Nothing about it is sent to nicheclock: the page downloads the same public data files as everyone and matches them here. Three buttons are the only exception, and each sends one field, only when you press it: Look up a word sends the word, Read my site sends the address, Read my channel sends the handle. Nothing they receive is stored or logged. Delete the profile here when you are done; a private window forgets it when it closes. ",
     h("details", { class: "check" }, [h("summary", { text: "How to check this in your browser's network tab" }),
-      h("p", { text: "Open the developer tools (F12), choose Network, then press Show my niche. You will see GET requests for the pool file and the topic list, with no query string, and no request that carries what you typed." })])]);
+      h("p", { text: "Open the developer tools (F12), choose Network, then press Show my niche. You will see GET requests for the pool file and the topic list, with no query string, and no request that carries what you typed. Press one of the three buttons and you will see exactly one POST with only its own field." })])]);
+}
+
+/* the free-tier limits, said plainly where the buttons are (numbers: hosted/src/suggest-limits.ts, suggest-youtube.ts, wrangler.toml) */
+function limitsBox(h) {
+  return h("div", { class: "privacy limits", role: "note" }, [
+    h("b", { text: "What the three buttons cost, and their limits. " }),
+    "They run on nicheclock's free Cloudflare plan (100,000 requests a day for the whole site and 10 ms of processor time per request) and, for channels, on a free Google quota, so each one has a cap, and some caps are shared by everybody:",
+    h("ul", {}, [
+      h("li", { text: "Look up a word: 20 an hour from one address. A word that is in the topic list needs no outside call; any other word is also sent to Wikidata." }),
+      h("li", { text: "Read my site: 5 an hour from one address, one read of the same site a minute, and at most 26 requests, 300 KB of sitemap and 15 seconds a read. It obeys robots.txt and says who it is (user agent nicheclock-suggest, see /bot)." }),
+      h("li", { text: "Read my channel (shown only when it is switched on): 5 a day from one address, and 2,000 units of Google's free YouTube quota a day for everybody (3 units a read, about 666 reads)." })]),
+    "When a limit is reached the page says so and typing your topics still works. Nothing is queued and nothing is charged."]);
 }
 function regionLabel(meta, id) {
   const r = ((meta && meta.regions) || []).filter((x) => x.id === id)[0];
@@ -144,7 +179,7 @@ export function profilePage(ctx, host, notice) {
   const addTopic = (t) => {
     const r = P.addTopic(draft, { qid: t.qid, label: t.label, source: "typed" });
     if (r.error) { say(r.error); return; }
-    draft = r.profile; input.value = ""; closeSug(); say(""); drawChips(); if (!nameTouched) nameInput.value = draft.topics[0].label.charAt(0).toUpperCase() + draft.topics[0].label.slice(1) + " niche";
+    draft = r.profile; input.value = ""; lookupBtn.hidden = true; closeSug(); say(""); drawChips(); if (!nameTouched) nameInput.value = draft.topics[0].label.charAt(0).toUpperCase() + draft.topics[0].label.slice(1) + " niche";
     input.focus();
   };
   function drawSug() {
@@ -154,14 +189,15 @@ export function profilePage(ctx, host, notice) {
     if (!options.length) {
       if (input.value.trim().length < 2) { closeSug(); return; }
       sug.hidden = false; input.setAttribute("aria-expanded", "true");
-      sug.appendChild(h("div", { class: "note", text: "Not in the topic list. Try the broader word, such as the sport, the subject or the species group itself." }));
+      sug.appendChild(h("div", { class: "note", text: "Not in the topic list. Try the broader word, such as the sport, the subject or the species group itself, or look the word up." }));
+      lookupBtn.textContent = "Look up \u201C" + input.value.trim() + "\u201D (sends this word to nicheclock)"; lookupBtn.hidden = false;
       return;
     }
     sug.hidden = false; input.setAttribute("aria-expanded", "true");
     options.forEach((o, i) => sug.appendChild(h("div", { role: "option", id: "sug-" + i, "aria-selected": String(i === active), onmousedown: (e) => { e.preventDefault(); addTopic(o); } },
       [h("b", { text: o.label }), " ", h("span", { class: "d", text: o.desc })])));
   }
-  input.addEventListener("input", () => { active = -1; drawSug(); });
+  input.addEventListener("input", () => { active = -1; lookupBtn.hidden = true; drawSug(); });
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (options.length) { active = (active + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length; drawSug(); } }
     else if (e.key === "Enter") { e.preventDefault(); const o = options[active >= 0 ? active : 0]; if (o) addTopic(o); }
@@ -181,6 +217,25 @@ export function profilePage(ctx, host, notice) {
   }
   /* step 2: bridges, "people who write about X also cover", for a hobby or field that Wikidata does not tie to its subject */
   const bridgeBox = h("div", { class: "bridges", hidden: true });
+  /* "Look up a word": POST /v1/resolve {text}, only after a click */
+  const lookupBox = h("div", { class: "found", hidden: true, "aria-live": "polite" });
+  const lookupBtn = h("button", { type: "button", class: "btn2", hidden: true, "data-fk": "lookup", onclick: () => doLookup(input.value.trim()) });
+  function doLookup(text) {
+    lookupBox.hidden = false; lookupBox.textContent = "";
+    if (lookupBox.scrollIntoView) lookupBox.scrollIntoView({ block: "nearest" });
+    lookupBox.appendChild(h("p", { class: "hint", text: "Looking up the word\u2026" }));
+    post("/v1/resolve", { text }).then((r) => {
+      lookupBox.textContent = "";
+      if (!r.ok) { lookupBox.appendChild(h("p", { class: "msg", role: "alert", text: fail(r) })); return; }
+      const t = r.body.topic;
+      if (!t) { lookupBox.appendChild(h("p", { class: "hint", text: "Nothing matches that word. Try a broader or more common word." })); return; }
+      const one = (c) => h("div", { class: "opt" }, [h("b", { text: c.label }), " ", h("span", { class: "d dim", text: c.description || "" }), " ",
+        h("button", { type: "button", class: "btn2", text: "Add", title: "Add " + c.label + " as a topic", onclick: () => { lookupBox.hidden = true; addTopic({ qid: c.qid, label: c.label }); } })]);
+      lookupBox.appendChild(h("p", { class: "hint", text: (t.source === "wikidata" ? "From Wikidata. " : "") + (t.ambiguous ? "More than one thing has this name. Pick the meaning you intend:" : "Pick the meaning you intend:") }));
+      lookupBox.appendChild(one(t));
+      (t.alternatives || []).forEach((c) => lookupBox.appendChild(one(c)));
+    });
+  }
   function drawBridges() {
     bridgeBox.textContent = "";
     bridgeBox.hidden = true;
@@ -219,6 +274,66 @@ export function profilePage(ctx, host, notice) {
   };
   const site = h("input", { id: "site", type: "text", placeholder: "https://example.org", value: (draft.sites[0] || {}).url || "", autocomplete: "off", inputmode: "url",
     oninput: (e) => { draft.sites = e.target.value.trim() ? [{ url: e.target.value.trim() }] : []; } });
+  /* "Read my site" and "Read my channel": each sends only its own field, and only after a click */
+  const found = h("div", { class: "found", hidden: true, "aria-live": "polite" });
+  const ytInput = chan("youtube", "YouTube channel", "YouTube @handle");
+  function showFound(heading, reply, source, pages) {
+    found.hidden = false; found.textContent = "";
+    found.appendChild(h("h3", { text: heading }));
+    const phrases = reply.phrases || [];
+    if (!phrases.length) { found.appendChild(h("p", { class: "hint", text: "No topic word appeared in at least two pages. Type your topics instead." })); return; }
+    loadConcepts(meta).then((ix) => {
+      const names = conceptsByName(ix);
+      let room = P.MAX_TOPICS - draft.topics.length;
+      const items = phrases.map((p) => {
+        const hit = names.get(p.text), c = hit && hit.row, have = !!c && draft.topics.some((t) => t.qid === "Q" + c[0]);
+        // ticked only when the phrase is the topic's own name; a match through an alias ("endgame" for a film) is shown, unticked, for the person to judge
+        const box = c && !have ? h("input", { type: "checkbox", "aria-label": "Add " + c[1], checked: hit.exact && room-- > 0 }) : null;
+        return { p, c, box, have };
+      });
+      const list = h("ul", { class: "foundlist" }, items.map((i) => h("li", {}, [
+        i.box || (i.have ? h("span", { class: "dim", text: "added " }) : null), h("b", { text: i.c ? i.c[1] : i.p.text }), " ",
+        i.c ? h("span", { class: "d dim", text: i.c[2] }) : h("button", { type: "button", class: "btn2", text: "Look up (sends this word to nicheclock)", onclick: () => doLookup(i.p.text) }), " ",
+        h("span", { class: "dim", text: "in " + i.p.pages_with + " of " + pages + " " + (source === "youtube" ? "videos" : "pages") })])));
+      found.appendChild(list);
+      found.appendChild(h("p", { class: "hint", text: "Nothing is added without a tick. A word with no meaning shown is not in the topic list: look it up, or leave it." }));
+      found.appendChild(h("button", { type: "button", class: "btn2", "data-fk": "add-ticked", text: "Add ticked", onclick: () => {
+        let n = 0;
+        for (const i of items) {
+          if (!i.box || !i.box.checked) continue;
+          const r = P.addTopic(draft, { qid: "Q" + i.c[0], label: i.c[1], source });
+          if (r.error) { say(r.error); break; }
+          draft = r.profile; n++;
+        }
+        drawChips(); found.hidden = true; say("Added " + n + " topic" + (n === 1 ? "" : "s") + ".", true);
+      } }));
+    });
+  }
+  const readSite = h("button", { type: "button", class: "btn2", "data-fk": "read-site", text: "Read my site (sends this address to nicheclock)", onclick: () => {
+    const url = site.value.trim();
+    if (!url) { say("Type the address of your site first."); return; }
+    say(""); found.hidden = false; found.textContent = "";
+    found.appendChild(h("p", { class: "hint", text: "Reading the site: robots.txt, one sitemap, up to 8 page titles. This can take up to 15 seconds\u2026" }));
+    readSite.disabled = true;
+    post("/v1/suggest/site", { url }).then((r) => {
+      readSite.disabled = false;
+      if (!r.ok) { found.textContent = ""; found.appendChild(h("p", { class: "msg", role: "alert", text: fail(r) })); return; }
+      showFound("Topic words found on your site", r.body, "site", r.body.pages_read);
+    });
+  } });
+  const readYt = h("button", { type: "button", class: "btn2", "data-fk": "read-channel", hidden: true, text: "Read my channel (sends this handle to nicheclock)", onclick: () => {
+    const channel = ytInput.value.trim();
+    if (!channel) { say("Type your YouTube handle first, for example @example-chess."); return; }
+    say(""); found.hidden = false; found.textContent = "";
+    found.appendChild(h("p", { class: "hint", text: "Reading your latest videos\u2026" }));
+    readYt.disabled = true;
+    post("/v1/suggest/youtube", { channel }).then((r) => {
+      readYt.disabled = false;
+      if (!r.ok) { found.textContent = ""; found.appendChild(h("p", { class: "msg", role: "alert", text: fail(r) })); return; }
+      showFound("Topic words found on your channel", r.body, "youtube", r.body.videos_read);
+    });
+  } });
+  loadStatus().then((s) => { if (s && s.youtube) readYt.hidden = false; });
   const fmt = h("fieldset", { class: "checks field" }, [h("legend", { class: "sr", text: "Content types" })].concat(P.FORMATS.map((f) =>
     h("label", { class: "tg" }, [h("input", { type: "checkbox", class: "sr", checked: draft.formats.indexOf(f) >= 0, onchange: (e) => { draft.formats = P.FORMATS.filter((x) => (x === f ? e.target.checked : draft.formats.indexOf(x) >= 0)); } }), icon("check", "tick"), FORMAT_LABEL[f]]))));
   const perWeek = h("input", { id: "perweek", type: "number", min: "1", max: "14", value: (draft.cadence || {}).per_week || "", placeholder: "2",
@@ -273,16 +388,19 @@ export function profilePage(ctx, host, notice) {
     samples,
     h("p", { class: "hint coverage", text: "Works best for topics that Wikidata describes in detail: sports, games, film, music and species. It is weaker for hobbies and ingredients: in our check on 2 November 2026 (United States), 14 of the top 20 birdwatching rows and 2 of the 9 sourdough rows were on topic, and India and Brazil have too few pages for a small niche. Add what you write about, not only the hobby." }),
     switcher,
-    h("div", { class: "field" }, [h("label", { for: "topic", text: "What do you write about?" }), input, sug, chips, hint, bridgeBox]),
+    h("div", { class: "field" }, [h("label", { for: "topic", text: "What do you write about?" }), input, sug, h("div", { class: "btnrow" }, [lookupBtn]), lookupBox, chips, hint, bridgeBox]),
     h("div", { class: "row2" }, [field("Country", "country", regionSel), field("Language", "lang", langHost)]),
     h("p", { class: "hint", text: "Only " + regions.map((r) => regionLabel(meta, r)).join(", ") + " have enough pages in Wikimedia's per-country pageview files for a pool; the other countries have too few or none." }),
     h("div", { class: "field" }, [h("label", { for: "pname", text: "Name this profile" }), nameInput]),
     h("div", { class: "cluster" }, [
       h("h2", { text: "Channels and site" }),
-      field("Your website", "site", site, "Stored as typed and never fetched. It only appears in the exported file."),
+      field("Your website", "site", site, "Stored as typed. The button below reads it once: robots.txt, one sitemap and up to 8 page titles, with the user agent nicheclock-suggest (see /bot), and shows the topic words it finds. Nothing is kept."),
+      h("div", { class: "btnrow" }, [readSite]),
       h("div", { class: "field" }, [h("span", { class: "lbl", text: "Other channels" }), h("div", { class: "row2" }, [chan("x", "X handle", "X @handle"), chan("tiktok", "TikTok handle", "TikTok @handle")]),
-        h("div", { class: "row2" }, [chan("pinterest", "Pinterest handle", "Pinterest @handle"), chan("youtube", "YouTube channel", "YouTube @handle")]),
-        h("p", { class: "hint", text: "Stored as typed and never fetched; they appear only in the exported file." })])]),
+        h("div", { class: "row2" }, [chan("pinterest", "Pinterest handle", "Pinterest @handle"), ytInput]),
+        h("div", { class: "btnrow" }, [readYt]),
+        h("p", { class: "hint", text: "Stored as typed and shown in the exported file. X, TikTok and Pinterest are never fetched. The YouTube button appears only when channel reading is switched on; it asks YouTube for the titles and tags of your latest 50 videos." })])]),
+    found,
     h("div", { class: "cluster" }, [
       h("h2", { text: "What you publish" }), fmt,
       h("div", { class: "row2" }, [field("Posts per week", "perweek", perWeek), h("div", { class: "field" }, [h("span", { class: "lbl", text: "Usual days" }), days])]),
@@ -299,6 +417,7 @@ export function profilePage(ctx, host, notice) {
         if (id) { store = P.remove(store, id); if (store.profiles.length) persist(ctx, store); else P.clearStore(ctx.storage); }
         ctx.profileChanged(); profilePage(ctx, host, "Deleted."); } })]),
     msg,
+    limitsBox(h),
     privacyBox(h)
   ]);
   host.appendChild(page);

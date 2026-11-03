@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { D1Migration } from "@cloudflare/vitest-plugin";
 import type { Env } from "../src/env";
 
