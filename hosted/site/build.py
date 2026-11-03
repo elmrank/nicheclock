@@ -13,6 +13,7 @@ content/<name>.html starts with `key: value` lines, a line `---`, then an HTML f
 docs/<name>.md starts with YAML front matter between `---` lines:
     title: (<= 45 chars, sentence case)   description: (100-160 chars)   order: int   section: start|run|connect|reference
     nav: optional short sidebar label     publish: false hides a file that has a title
+    jsonld: optional path (relative to docs/) of a JSON-LD file, written into the page head
 A docs file is published when its front matter has a `title`. URL: /docs/<name>/ (index.md is /docs/). Links between
 docs are relative (`[x](docker.md#top)`) and are rewritten; images are `img/x.png`, copied to /docs/img/.
 A blockquote that starts with `**Status.**` or `**Coming soon:**` is drawn as a note box.
@@ -25,6 +26,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import json
 import re
 import shutil
 import sys
@@ -45,15 +47,16 @@ REPO_PUBLIC = True    # False prints "Source code: coming soon" instead of the l
 REPO_URL = "https://github.com/elmrank/nicheclock"
 CONTACT_LIVE = False  # True once nicheclock@elmrank.com exists (launch prep); until then pages say "Contact: coming soon"
 CONTACT = "nicheclock@elmrank.com"
-# Indexing rule: exactly ONE indexable URL, the homepage. Every other page carries <meta robots noindex> and the
+# Indexing rule: the homepage first, then one more URL every 2 days. Every other page carries <meta robots noindex> and the
 # Worker adds X-Robots-Tag: noindex (src/index.ts INDEXABLE_PATHS must list the same paths). The sitemap lists INDEXABLE only.
 # Opening a URL later: add its path here AND in src/index.ts, rebuild, deploy.
-INDEXABLE = {"/"}
+INDEXABLE = {"/", "/docs/what-is-nicheclock/"}
 NOINDEX_META = '<meta name="robots" content="noindex,nofollow">'
+INDEX_META = '<meta name="robots" content="index,follow">'
 
 
 def robots_meta(path: str) -> str:
-    return "" if path in INDEXABLE else NOINDEX_META
+    return INDEX_META if path in INDEXABLE else NOINDEX_META
 
 REQUIRED_DOCS = ["index", "quickstart", "configuration", "models", "mcp", "api", "sources"]
 SECTIONS = [("start", "Start"), ("run", "Run"), ("connect", "Connect"), ("reference", "Reference")]
@@ -135,6 +138,14 @@ def post_process(body: str, doc_names: set[str], file: str, problems: list[str])
     return re.sub(r"<tr>.*?</tr>", cells, body, flags=re.S)
 
 
+def load_jsonld(docs_dir: Path, rel: str | None) -> str:
+    """The JSON-LD of a docs page (front matter `jsonld: geo/x.json`, relative to docs/): checked as JSON, written on one line, safe inside <script>."""
+    if not rel:
+        return ""
+    data = json.loads((docs_dir / rel).read_text(encoding="utf-8"))
+    return json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
+
+
 def load_docs(docs_dir: Path) -> list[dict]:
     docs = []
     for f in sorted(docs_dir.glob("*.md")):
@@ -144,7 +155,7 @@ def load_docs(docs_dir: Path) -> list[dict]:
         docs.append({
             "name": f.stem, "path": doc_url(f.stem), "title": meta["title"], "description": meta.get("description", ""),
             "order": int(meta.get("order", 999)), "group": meta.get("section", ""), "nav": meta.get("nav", "Overview" if f.stem == "index" else meta["title"]),
-            "section": "docs", "file": f.name, "md": text, "updated": meta.get("updated", UPDATED),
+            "section": "docs", "file": f.name, "md": text, "updated": meta.get("updated", UPDATED), "jsonld": load_jsonld(docs_dir, meta.get("jsonld")),
         })
     return sorted(docs, key=lambda d: (d["order"], d["name"]))
 
@@ -207,6 +218,7 @@ def render(page: dict, css: str, js: str, docs: list[dict]) -> str:
     url = SITE + page["path"]
     title = page["title"] if page.get("full") == "true" else f'{page["title"]} | {NAME}'
     robots = robots_meta(page["path"])
+    ld = f'<script type="application/ld+json">{page["jsonld"]}</script>' if page.get("jsonld") else ""
     err = page["section"] == "error"
     canonical = "" if err else f'<link rel="canonical" href="{url}">'
     og = "" if err else (
@@ -221,7 +233,7 @@ def render(page: dict, css: str, js: str, docs: list[dict]) -> str:
         f'<meta name="description" content="{esc(page["description"])}">'
         f"{robots}{canonical}"
         '<meta name="color-scheme" content="light dark">'
-        f"{og}"
+        f"{og}{ld}"
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f'<link rel="stylesheet" href="/assets/{css}">'
         f'<script src="/assets/{js}" defer></script></head><body>'
@@ -400,11 +412,11 @@ def main() -> None:
     else:
         (out / "index.html").write_text(home_page(app_names), encoding="utf-8")
 
-    lastmod = UPDATED
+    home_lastmod = UPDATED
     if trending:   # the homepage changes when the catalog does
-        import json
-        lastmod = json.loads((out / "catalog-data" / "meta.json").read_text(encoding="utf-8"))["generated_at"][:10]
-    rows = "".join(f"<url><loc>{SITE}{path}</loc><lastmod>{lastmod}</lastmod></url>" for path in sorted(INDEXABLE))
+        home_lastmod = json.loads((out / "catalog-data" / "meta.json").read_text(encoding="utf-8"))["generated_at"][:10]
+    lastmods = {d["path"]: d["updated"] for d in docs}      # a docs page: its own `updated:` date
+    rows = "".join(f"<url><loc>{SITE}{path}</loc><lastmod>{lastmods.get(path, home_lastmod)}</lastmod></url>" for path in sorted(INDEXABLE))
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + rows + "</urlset>\n",
         encoding="utf-8",

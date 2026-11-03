@@ -273,12 +273,12 @@ async function handleMcpRoute(req: Request, env: Env, now: Date): Promise<Respon
 }
 
 /**
- * Indexing rule: exactly ONE URL may be indexed, the homepage `/` (tabs, regions and categories are
- * URL-hash state on `/`, so they are the same URL for a crawler). Every other response, API, pages, JSON, assets and
+ * Indexing rule: the homepage `/` first (tabs, regions and categories are URL-hash state on `/`, so they are the
+ * same URL for a crawler), then one more URL every 2 days. Every other response, API, pages, JSON, assets and
  * errors alike, says noindex. Opening another URL later = add its path to INDEXABLE_PATHS here, remove the meta robots
  * in the page (site/build.py INDEXABLE) and add it to the sitemap; nothing else changes.
  */
-export const INDEXABLE_PATHS: ReadonlySet<string> = new Set(["/"]);
+export const INDEXABLE_PATHS: ReadonlySet<string> = new Set(["/", "/docs/what-is-nicheclock/"]);
 const NOINDEX_TAG = "noindex, nofollow";
 const INDEX_TAG = "index, follow";
 

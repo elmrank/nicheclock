@@ -41,10 +41,10 @@ describe("static site Basic gate", () => {
     }
   });
 
-  it("lets exactly one URL be indexed: the homepage answers index, follow, everything else noindex", async () => {
+  it("lets only the opened URLs be indexed (the homepage and /docs/what-is-nicheclock/): they answer index, follow, everything else noindex", async () => {
     const ok = { headers: basic("example-user", "s3cret:pw"), env };
-    expect((await call("/", ok)).headers.get("x-robots-tag")).toBe("index, follow");
-    for (const p of ["/terms/", "/privacy/", "/docs/", "/docs/api/", "/demo/", "/catalog-data/trending.json", "/sitemap.xml", "/robots.txt", "/assets/x.js", "/missing", "/index.html"]) {
+    for (const p of ["/", "/docs/what-is-nicheclock/"]) expect((await call(p, ok)).headers.get("x-robots-tag"), p).toBe("index, follow");
+    for (const p of ["/terms/", "/privacy/", "/docs/", "/docs/api/", "/docs/what-is-nicheclock", "/docs/answers/", "/demo/", "/catalog-data/trending.json", "/sitemap.xml", "/robots.txt", "/assets/x.js", "/missing", "/index.html"]) {
       expect((await call(p, ok)).headers.get("x-robots-tag"), p).toBe("noindex, nofollow");
     }
     // a failed login on "/" is a 401, never "index"
