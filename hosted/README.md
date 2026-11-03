@@ -94,16 +94,16 @@ curl -s https://nicheclock.elmrank.com/mcp -H "Authorization: Bearer $KEY" -H 'C
 
 ## Profile page endpoints (no key)
 
-The profile page of the site has three buttons that call the Worker without a key (`src/suggest*.ts`). Same origin only, `application/json` bodies, no CORS, limits per address (below), no logging of any input:
+The profile page of the site has three buttons that call the Worker without a key (`src/suggest*.ts`). Same origin only, `application/json` bodies, no CORS, limits per address in Cloudflare rate-limiting bindings (below), no logging of any input:
 
 | | |
 |---|---|
 | `GET /v1/suggest/status` | `{resolve, site, youtube}`; `youtube` is true only when the secret `YOUTUBE_API_KEY` is set |
-| `POST /v1/resolve` `{"text": "chess"}` | "Look up a word": the topic list first, Wikidata only for a word not in it. 20 an hour per address |
-| `POST /v1/suggest/site` `{"url": "https://example.org"}` | "Read my site": robots.txt (RFC 9309), one sitemap (at most 300 KB), at most 8 page titles (64 KB each), at most 26 subrequests, one redirect on the same host at most; user agent `nicheclock-suggest/1.0 (+https://nicheclock.elmrank.com/bot; oss@elmrank.com)`. 5 an hour per address, one read of a site a minute |
-| `POST /v1/suggest/youtube` `{"channel": "@example-chess"}` | "Read my channel": 3 YouTube Data API units a call, 5 a day per address, 2,000 units a day in all (one D1 row per UTC day). 404 `not_available` without the key |
+| `POST /v1/resolve` `{"text": "chess"}` | "Look up a word": the topic list first, Wikidata only for a word not in it. 20 a minute per address |
+| `POST /v1/suggest/site` `{"url": "https://example.org"}` | "Read my site": robots.txt (RFC 9309), one sitemap (at most 300 KB), at most 8 page titles (64 KB each), at most 26 subrequests, one redirect on the same host at most; user agent `nicheclock-suggest/1.0 (+https://nicheclock.elmrank.com/bot; oss@elmrank.com)`. 3 a minute per address, one read of a site a minute, 2,000 reads a day in all |
+| `POST /v1/suggest/youtube` `{"channel": "@example-chess"}` | "Read my channel": 3 YouTube Data API units a call, 2 a minute per address, 2,000 units a day in all (one D1 row per UTC day). 404 `not_available` without the key |
 
-Limits: the `BURST` rate-limiting binding (6 calls per 10 s per address; Cloudflare's binding only supports 10 or 60 second windows) is the first gate; the hourly and daily caps are D1 counters under an HMAC of the address and the window (`migrations/0003_suggest_limits.sql`), deleted after the window. Condition (b) of the plan, no logging of what a person typed: no `console` call in these files (`test/privacy.test.ts` greps `src/suggest*.ts`, `profile-tools.ts`, `shards.ts` and `robotstxt.ts`), fixed error messages, and the replies do not hold the input.
+Limits: Cloudflare rate-limiting bindings (`RL_RESOLVE` 20/60 s, `RL_SITE` 3/60 s, `RL_YOUTUBE` 2/60 s, `RL_PROFILE` 30/60 s per API key, `RL_HOST` 1/60 s per host name; they only support 10 or 60 second windows). The counter of a key lives inside Cloudflare, so nothing of ours stores an address, not even hashed (the bindings count per Cloudflare location and are approximate: three reads of one host in a row were all let through, so only the daily D1 caps are exact). The only counters in D1 are two global numbers per UTC day with no caller: `youtube_units_daily` (cap 2,000 units) and `site_reads_daily` (cap 2,000 reads), `migrations/0004_no_address_counters.sql`. Condition (b) of the plan, no logging of what a person typed: no `console` call in these files (`test/privacy.test.ts` greps `src/suggest*.ts`, `profile-tools.ts`, `shards.ts` and `robotstxt.ts`), fixed error messages, and the replies do not hold the input.
 
 ### The YouTube key (optional, billing OFF)
 
@@ -176,11 +176,11 @@ The Worker is `nicheclock-hosted`, the D1 database `nicheclock`, the R2 bucket `
 1. `export CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=…`
 2. `npx wrangler d1 create nicheclock` → put the id in `wrangler.toml` (`database_id`).
 3. `npx wrangler r2 bucket create nicheclock-data`
-4. `npx wrangler d1 migrations apply nicheclock --remote` (0003 adds the two small tables of the three profile-page buttons: `suggest_rate`, `youtube_units_daily`; apply it before the deploy that uses it, it is additive and the previous Worker ignores it).
+4. `npx wrangler d1 migrations apply nicheclock --remote` (0003 adds `youtube_units_daily`; 0004 drops `suggest_rate` and adds `site_reads_daily`: apply 0004 just before the deploy that no longer uses `suggest_rate`).
 5. Create the GitHub OAuth App (under the `elmrank` organisation): homepage `https://nicheclock.elmrank.com`,
    callback `https://nicheclock.elmrank.com/auth/github/callback`. Then
    `npx wrangler secret put GITHUB_CLIENT_ID | GITHUB_CLIENT_SECRET | SESSION_SECRET` (SESSION_SECRET: `openssl rand -hex 32`).
-   The Worker also reads two optional secrets: `YOUTUBE_API_KEY` (see "Profile page endpoints", it switches the "Read my channel" button on) and, for the counters of the three buttons, `SESSION_SECRET` (the HMAC key; without it a fixed fallback key is used).
+   The Worker also reads two optional secrets: `YOUTUBE_API_KEY` (see "Profile page endpoints", it switches the "Read my channel" button on) the Worker needs no other secret for the limits.
 6. `npx wrangler deploy` (the route `nicheclock.elmrank.com` is a Custom Domain; `workers_dev = false`). The elmrank.com zone must be on the same account.
 7. Mint internal keys and one admin key: `node scripts/mint-key.mjs …` then `npx wrangler d1 execute nicheclock --remote --file mint.sql`.
 8. Export + upload the catalog once, then `curl` `/v1/niches` with an internal key.

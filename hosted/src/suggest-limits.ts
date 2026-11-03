@@ -1,77 +1,61 @@
 /**
- * Limits for the three public "Sends ..." buttons (POST /v1/resolve, /v1/suggest/site, /v1/suggest/youtube).
+ * Limits of the three public "Sends ..." buttons (POST /v1/resolve, /v1/suggest/site, /v1/suggest/youtube) and of the profile tools.
  *
- * Two layers, both free:
- *   1. The `BURST` rate-limiting binding of Cloudflare (wrangler.toml `[[ratelimits]]`): at most 6 calls per 10 s per address. The binding
- *      only knows windows of 10 or 60 seconds and keeps its counters inside Cloudflare, so nothing of ours stores an address for it.
- *   2. The hourly and daily caps of the plan (20 lookups an hour, 5 site reads an hour, 5 channel reads a day per address; 1 read of a given
- *      site per minute for everybody) are counters in D1, because a window of an hour or a day is beyond what the binding can express.
- *      A bucket is `<kind>:<16 hex>` = a keyed hash (HMAC-SHA-256, secret = SESSION_SECRET) of the caller's address plus the window index,
- *      or of the target host plus the minute. It cannot be turned back into an address or a host, and the row is deleted after its window.
- *      No URL, word, handle or profile reaches this file or the table.
+ * Nothing of ours stores an address. Per-caller limits are Cloudflare's rate-limiting bindings (wrangler.toml `[[ratelimits]]`): the counter
+ * for a key lives inside Cloudflare, not in D1, R2 or anywhere we can read. The key is the caller's address (the profile tools: the API key id),
+ * or, for a read of a site, the host name. Windows can only be 10 or 60 seconds.
+ *
+ * What we do store are two global counters with no caller in them: `youtube_units_daily` (YouTube Data API units spent today) and
+ * `site_reads_daily` (site reads today). One number per UTC day each.
  */
-import type { Env } from "./env";
-import { ApiError, encoder, hex } from "./http";
+import type { Env, KeyRow } from "./env";
+import { ApiError } from "./http";
 
 export type Kind = "resolve" | "site" | "youtube";
 
-/** calls allowed per address in one window: [count, window in seconds] */
-export const LIMITS: Record<Kind, [number, number]> = {
-  resolve: [20, 3600],
-  site: [5, 3600],
-  youtube: [5, 86400],
-};
-export const HOST_WINDOW: [number, number] = [1, 60];
+/** calls allowed per 60 seconds per caller (the values of the bindings in wrangler.toml, said again in the message) */
+export const PER_MINUTE: Record<Kind | "profile", number> = { resolve: 20, site: 3, youtube: 2, profile: 30 };
+export const SITE_DAILY_CAP = 2000;
 
-let keyCache: { secret: string; key: CryptoKey } | null = null;
-
-async function hmac(env: Env, text: string): Promise<string> {
-  const secret = env.SESSION_SECRET || "nicheclock-limits";
-  if (!keyCache || keyCache.secret !== secret) {
-    keyCache = { secret, key: await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]) };
-  }
-  const sig = await crypto.subtle.sign("HMAC", keyCache.key, encoder.encode(text));
-  return hex(sig).slice(0, 16);
+function tooMany(message: string): ApiError {
+  return new ApiError(429, "rate_limited", message, { "retry-after": "60" });
 }
 
-/** Count one call in a window. Returns the number of calls so far in that window (this one included). */
-async function bump(env: Env, bucket: string, windowSeconds: number, nowSec: number): Promise<number> {
-  const expires = (Math.floor(nowSec / windowSeconds) + 1) * windowSeconds + 60;
-  const row = await env.DB.prepare(
-    "INSERT INTO suggest_rate (bucket, n, expires) VALUES (?1, 1, ?2) ON CONFLICT(bucket) DO UPDATE SET n = n + 1 RETURNING n",
-  )
-    .bind(bucket, expires)
+function binding(env: Env, kind: Kind | "profile" | "host"): RateLimit | undefined {
+  return { resolve: env.RL_RESOLVE, site: env.RL_SITE, youtube: env.RL_YOUTUBE, profile: env.RL_PROFILE, host: env.RL_HOST }[kind];
+}
+
+/** Throws a 429 ApiError when the caller is over the limit of this button. Without the binding (tests, local dev) there is no limit. */
+export async function checkCaller(env: Env, req: Request, kind: Kind): Promise<void> {
+  const rl = binding(env, kind);
+  if (!rl) return;
+  const { success } = await rl.limit({ key: req.headers.get("cf-connecting-ip") ?? "unknown" });
+  if (!success) throw tooMany(`This button can be used ${PER_MINUTE[kind]} times a minute from one address. Wait a minute, or type your topics instead.`);
+}
+
+/** The profile tools: per API key, 30 a minute */
+export async function checkProfileRate(env: Env, key: KeyRow): Promise<void> {
+  const rl = binding(env, "profile");
+  if (!rl) return;
+  const { success } = await rl.limit({ key: key.id });
+  if (!success) throw tooMany(`The profile tools can be used ${PER_MINUTE.profile} times a minute per key. Wait a minute.`);
+}
+
+/** One read of a given site a minute for everybody, so the button cannot be used to hammer one site. The key is the host; the state is in Cloudflare. */
+export async function checkHost(env: Env, host: string): Promise<void> {
+  const rl = binding(env, "host");
+  if (!rl) return;
+  const { success } = await rl.limit({ key: host });
+  if (!success) throw tooMany("This site was read a moment ago. Try again in a minute, or type your topics instead.");
+}
+
+/** Count one site read in today's global total. False (nothing counted) when the day's cap is reached. */
+export async function spendSiteRead(env: Env, now = new Date()): Promise<boolean> {
+  const day = now.toISOString().slice(0, 10);
+  const row = await env.DB.prepare("INSERT INTO site_reads_daily (day, n) VALUES (?1, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1 WHERE n < ?2 RETURNING n")
+    .bind(day, SITE_DAILY_CAP)
     .first<{ n: number }>();
-  if (Math.random() < 0.05) await env.DB.prepare("DELETE FROM suggest_rate WHERE expires < ?1").bind(nowSec).run();
-  return row?.n ?? 1;
-}
-
-function tooMany(message: string, retryAfter: number): ApiError {
-  return new ApiError(429, "rate_limited", message, { "retry-after": String(Math.max(1, retryAfter)) });
-}
-
-/** Throws a 429 ApiError when the caller is over a limit. Counts the call otherwise. */
-export async function checkCaller(env: Env, req: Request, kind: Kind, now = new Date()): Promise<void> {
-  const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
-  const nowSec = Math.floor(now.getTime() / 1000);
-  if (env.BURST) {
-    const { success } = await env.BURST.limit({ key: `${kind}:${ip}` });
-    if (!success) throw tooMany("Too many requests in a row. Wait a few seconds.", 10);
-  }
-  const [max, win] = LIMITS[kind];
-  const n = await bump(env, `${kind}:${await hmac(env, `${ip}|${kind}|${Math.floor(nowSec / win)}`)}`, win, nowSec);
-  if (n > max) {
-    const left = win - (nowSec % win);
-    throw tooMany(`This button can be used ${max} times ${win === 3600 ? "an hour" : "a day"} from one address. Try again later, or type your topics instead.`, left);
-  }
-}
-
-/** One read of a given site per minute across all callers, so the button cannot be used to hammer one site. */
-export async function checkHost(env: Env, host: string, now = new Date()): Promise<void> {
-  const nowSec = Math.floor(now.getTime() / 1000);
-  const [max, win] = HOST_WINDOW;
-  const n = await bump(env, `host:${await hmac(env, `${host}|${Math.floor(nowSec / win)}`)}`, win, nowSec);
-  if (n > max) throw tooMany("This site was read a moment ago. Try again in a minute, or type your topics instead.", win - (nowSec % win));
+  return row !== null;
 }
 
 /** The daily budget of YouTube Data API units: one D1 row per UTC day. Returns false (and spends nothing) when `units` more would pass the cap. */

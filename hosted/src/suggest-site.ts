@@ -14,7 +14,7 @@ import type { Env } from "./env";
 import { ApiError } from "./http";
 import { extractPhrases, cleanTitles, slugWordsOfPath } from "../site/trending/phrases.js";
 import { ROBOTS_MAX_BYTES, isAllowed, parseRobots, rulesFor, type Rule } from "./robotstxt";
-import { checkCaller, checkHost } from "./suggest-limits";
+import { checkCaller, checkHost, spendSiteRead } from "./suggest-limits";
 import { PRODUCT_TOKEN, checkTarget, fetchLimited, gunzipCapped, newBudget, sameSite, type Budget, type Fetched, type Target } from "./suggest-net";
 
 export const SITEMAP_MAX_BYTES = 300 * 1024;
@@ -192,8 +192,9 @@ export interface SiteReply {
 /** The whole read. */
 export async function readSite(input: unknown, env: Env, req: Request, now = new Date()): Promise<SiteReply> {
   const t = checkTarget(input);
-  await checkCaller(env, req, "site", now);
-  await checkHost(env, t.host, now);
+  await checkCaller(env, req, "site");
+  await checkHost(env, t.host);
+  if (!(await spendSiteRead(env, now))) throw fail(429, "quota_exhausted", "Site reading is used up for today.");
   const budget = newBudget(now.getTime());
 
   const robots = await robotsFor(budget, t);

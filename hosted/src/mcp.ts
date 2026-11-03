@@ -21,6 +21,7 @@ import type { Env, KeyRow } from "./env";
 import { ApiError, byteLength } from "./http";
 import { createJob } from "./jobs";
 import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
+import { checkProfileRate } from "./suggest-limits";
 
 export const MCP_SPEC_VERSION = "2026-07-28";
 export const LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26"] as const;
@@ -265,6 +266,7 @@ async function callTool(env: Env, key: KeyRow, name: string, args: Json, now: Da
       const language = typeof args.language === "string" && args.language.trim() ? args.language.trim() : null;
       return { result: await getGithubRising(env, key, window as GithubWindow, language, limit), isError: false };
     }
+    if (name === "trends_for_profile" || name === "upcoming_for_profile" || name === "resolve_topic") await checkProfileRate(env, key);
     if (name === "trends_for_profile") return { result: await trendsForProfile(env, args), isError: false };
     if (name === "upcoming_for_profile") return { result: await upcomingForProfile(env, args, now), isError: false };
     if (name === "resolve_topic") return { result: await resolveTopic(env, args), isError: false };

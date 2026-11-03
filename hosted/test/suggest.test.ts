@@ -10,10 +10,15 @@ import { call, db, json } from "./helpers";
 
 beforeEach(async () => {
   clearShardCache();
-  await db().batch([db().prepare("DELETE FROM suggest_rate"), db().prepare("DELETE FROM youtube_units_daily")]);
+  await db().batch([db().prepare("DELETE FROM site_reads_daily"), db().prepare("DELETE FROM youtube_units_daily")]);
 });
 afterEach(() => vi.restoreAllMocks());
-const noBurst = { ASSETS: assets, BURST: undefined };
+const noBurst = { ASSETS: assets, RL_RESOLVE: undefined, RL_SITE: undefined, RL_YOUTUBE: undefined, RL_PROFILE: undefined, RL_HOST: undefined };
+/** a stand-in for a Cloudflare rate-limiting binding: `max` calls per key, then success false; `keys` records every key it was asked about */
+const fakeRl = (max: number, keys: string[] = []) => {
+  const n = new Map<string, number>();
+  return { limit: async ({ key }: { key: string }) => { keys.push(key); n.set(key, (n.get(key) ?? 0) + 1); return { success: (n.get(key) as number) <= max }; } } as unknown as RateLimit;
+};
 let ipN = 0;
 const ip = () => ({ "cf-connecting-ip": `203.0.113.${(ipN = (ipN % 250) + 1)}` });
 
@@ -190,12 +195,7 @@ function fakeNet(site: Site) {
   });
 }
 
-/** Each read starts with empty counters, except the tests of the limits themselves (keep = true). */
-const read = async (url: unknown, extra: Record<string, string> = {}, env: object = noBurst, keep = false) => {
-  if (!keep) await db().prepare("DELETE FROM suggest_rate").run();
-  return readRaw(url, extra, env);
-};
-const readRaw = (url: unknown, extra: Record<string, string> = {}, env: object = noBurst) =>
+const read = (url: unknown, extra: Record<string, string> = {}, env: object = noBurst) =>
   call("/v1/suggest/site", { body: { url }, headers: { origin: "https://nicheclock.elmrank.com", ...ip(), ...extra }, env });
 
 describe("POST /v1/suggest/site", () => {
@@ -356,23 +356,36 @@ describe("POST /v1/suggest/site", () => {
     expect((await call("/v1/suggest/site", { method: "GET", env: noBurst })).status).toBe(405);
   });
 
-  it("limits a caller to 5 reads an hour and a site to one read a minute", async () => {
+  it("limits a caller to 3 reads a minute and a site to one read a minute, through the bindings (the key is the address, or the host)", async () => {
     fakeNet({ sitemap: urlset(30) });
+    const keys: string[] = [];
+    const env = { ...noBurst, RL_SITE: fakeRl(3, keys), RL_HOST: fakeRl(1, keys) };
     const same = { "cf-connecting-ip": "198.51.100.7" };
     const statuses: number[] = [];
-    for (let i = 0; i < 7; i++) statuses.push((await read(`https://site${i}.example.org`, same, noBurst, true)).status);
-    // site{i}.example.org has no fake sitemap host match, so the read ends in an error, but it is counted: the 6th and 7th are 429
-    expect(statuses.slice(5)).toEqual([429, 429]);
-    const r = await read(`https://site0.example.org`, { "cf-connecting-ip": "198.51.100.8" }, noBurst, true);
+    for (let i = 0; i < 5; i++) statuses.push((await read(`https://site${i}.example.org`, same, env)).status);
+    expect(statuses.slice(3)).toEqual([429, 429]);
+    const r = await read(`https://site0.example.org`, { "cf-connecting-ip": "198.51.100.8" }, env);
     expect(r.status).toBe(429);
     expect((await json(r)).error.message).toMatch(/read a moment ago/);
     expect(Number(r.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(keys).toContain("198.51.100.7");
+    expect(keys).toContain("site0.example.org");
+  });
+
+  it("stops at 2,000 site reads a day for everybody (one number per day, no caller in it)", async () => {
+    fakeNet({ sitemap: urlset(30) });
+    expect((await read(`https://${HOST}`)).status).toBe(200);
+    await db().prepare("UPDATE site_reads_daily SET n = 2000").run();
+    const r = await read(`https://${HOST}`);
+    expect(r.status).toBe(429);
+    expect((await json(r)).error.code).toBe("quota_exhausted");
+    expect(calls.length).toBe(10);       // the refused call fetched nothing
+    expect((await db().prepare("SELECT n FROM site_reads_daily").first<{ n: number }>())?.n).toBe(2000);
   });
 
   it("is stopped first by the rate-limiting binding when it says no", async () => {
     fakeNet({ sitemap: urlset(30) });
-    const BURST = { limit: vi.fn(async () => ({ success: false })) } as unknown as RateLimit;
-    const r = await read(`https://${HOST}`, ip(), { ASSETS: assets, BURST });
+    const r = await read(`https://${HOST}`, ip(), { ...noBurst, RL_SITE: { limit: vi.fn(async () => ({ success: false })) } as unknown as RateLimit });
     expect(r.status).toBe(429);
     expect(calls.length).toBe(0);
   });
@@ -388,7 +401,9 @@ function fakeWikidata(search: object[], sitelinks: Record<string, boolean>) {
     return Response.json({ entities: Object.fromEntries(Object.entries(sitelinks).map(([k, v]) => [k, v ? { sitelinks: { enwiki: { title: "x" } } } : {}])) });
   });
 }
-const lookup = (text: unknown, extra: Record<string, string> = {}) => call("/v1/resolve", { body: { text }, headers: { origin: "https://nicheclock.elmrank.com", ...ip(), ...extra }, env: noBurst });
+let rl20: RateLimit;
+beforeEach(() => { rl20 = fakeRl(20); });
+const lookup = (text: unknown, extra: Record<string, string> = {}, over: object = {}) => call("/v1/resolve", { body: { text }, headers: { origin: "https://nicheclock.elmrank.com", ...ip(), ...extra }, env: { ...noBurst, ...over } });
 
 describe("POST /v1/resolve", () => {
   it("answers from the concept list first, with no network", async () => {
@@ -415,7 +430,7 @@ describe("POST /v1/resolve", () => {
     expect(calls[0]?.url).toContain("search=zzrare");
   });
 
-  it("says nothing was found, refuses a bad body and limits to 20 an hour", async () => {
+  it("says nothing was found, refuses a bad body and limits to 20 a minute per address", async () => {
     fakeWikidata([], {});
     expect((await json(await lookup("zznothing"))).topic).toBeNull();
     expect((await lookup("")).status).toBe(400);
@@ -423,7 +438,7 @@ describe("POST /v1/resolve", () => {
     expect((await lookup(5)).status).toBe(400);
     const same = { "cf-connecting-ip": "198.51.100.77" };
     const statuses: number[] = [];
-    for (let i = 0; i < 22; i++) statuses.push((await lookup("chess", same)).status);
+    for (let i = 0; i < 22; i++) statuses.push((await lookup("chess", same, { RL_RESOLVE: rl20 })).status);
     expect(statuses.slice(0, 20).every((s) => s === 200)).toBe(true);
     expect(statuses.slice(20)).toEqual([429, 429]);
   });
@@ -439,7 +454,7 @@ describe("POST /v1/resolve", () => {
 /* ---------- Read my channel ---------- */
 
 const KEY = "test-key-not-a-real-google-key";
-const yt = { ASSETS: assets, BURST: undefined, YOUTUBE_API_KEY: KEY };
+const yt = { ...noBurst, YOUTUBE_API_KEY: KEY };
 const CH = "UC" + "a".repeat(22);
 
 function fakeYoutube(opts: { quota?: boolean } = {}) {
@@ -461,7 +476,7 @@ describe("POST /v1/suggest/youtube", () => {
   it("is off, and says so, until the secret YOUTUBE_API_KEY is set", async () => {
     const off = await json(await call("/v1/suggest/status", { env: { ASSETS: assets } }));
     expect(off).toEqual({ resolve: true, site: true, youtube: false });
-    const r = await channel("@example-chess", {}, { ASSETS: assets, BURST: undefined });
+    const r = await channel("@example-chess", {}, noBurst);
     expect(r.status).toBe(404);
     expect((await json(r)).error.code).toBe("not_available");
     expect((await json(await call("/v1/suggest/status", { env: yt }))).youtube).toBe(true);
@@ -496,12 +511,13 @@ describe("POST /v1/suggest/youtube", () => {
     for (const bad of ["", "chess", "https://evil.example/@x", "https://youtube.com/watch?v=abc", "UCshort", "@a", "ftp://youtube.com/@abc", 5, "@ bad handle"]) expect(() => parseChannel(bad), String(bad)).toThrow();
   });
 
-  it("allows 5 reads a day per address and stops at the day's budget of 2,000 units", async () => {
+  it("allows 2 reads a minute per address and stops at the day's budget of 2,000 units", async () => {
     fakeYoutube();
     const same = { "cf-connecting-ip": "198.51.100.99" };
     const statuses: number[] = [];
-    for (let i = 0; i < 6; i++) statuses.push((await channel("@example-chess", same)).status);
-    expect(statuses).toEqual([200, 200, 200, 200, 200, 429]);
+    const env = { ...yt, RL_YOUTUBE: fakeRl(2) };
+    for (let i = 0; i < 3; i++) statuses.push((await channel("@example-chess", same, env)).status);
+    expect(statuses).toEqual([200, 200, 429]);
     await db().prepare("UPDATE youtube_units_daily SET units = 1999").run();
     const r = await channel("@example-chess");
     expect(r.status).toBe(429);

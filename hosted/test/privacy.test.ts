@@ -24,7 +24,7 @@ describe("no console in the handlers of the three buttons and the profile tools"
 
 const S = { site: "https://zzsentinel-host-7731.example.org", word: "zzsentinelword", handle: "@zzsentinelhandle", profile: "zzsentinelprofile" };
 const ALL = [S.site, "zzsentinel-host-7731", S.word, S.handle, S.profile];
-const env = { ASSETS: assets, BURST: undefined, YOUTUBE_API_KEY: "test-key-not-real" };
+const env = { ASSETS: assets, YOUTUBE_API_KEY: "test-key-not-real" };
 const hdr = { origin: "https://nicheclock.elmrank.com", "cf-connecting-ip": "203.0.113.200" };
 
 describe("what each handler does with a sentinel", () => {
@@ -57,12 +57,13 @@ describe("what each handler does with a sentinel", () => {
     for (const s of spies) expect(s).not.toHaveBeenCalled();
     // the replies of the three buttons never hold their own input (profile tools may say which of the caller's own texts they could not find)
     for (const b of bodies.slice(0, 6)) for (const w of ALL) expect(b).not.toContain(w);
-    // nothing is stored: the two tables hold no sentinel, and no row that could be read back as one
-    const rate = await db().prepare("SELECT bucket FROM suggest_rate").all<{ bucket: string }>();
-    expect(rate.results.length).toBeGreaterThan(0);
-    for (const row of rate.results) {
-      expect(row.bucket).toMatch(/^(resolve|site|youtube|host):[0-9a-f]{16}$/);
-      for (const w of ALL) expect(row.bucket).not.toContain(w);
+    // nothing of ours stores an address, a word or a host: the per-caller table is gone, and the only counters left are two numbers per day
+    const tables = (await db().prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all<{ name: string }>()).results.map((r) => r.name);
+    expect(tables).not.toContain("suggest_rate");
+    for (const t of ["site_reads_daily", "youtube_units_daily"]) {
+      const rows = await db().prepare(`SELECT * FROM ${t}`).all();
+      for (const row of rows.results) for (const w of ALL) expect(JSON.stringify(row)).not.toContain(w);
+      expect(Object.keys(rows.results[0] ?? {}).length).toBeLessThanOrEqual(2);
     }
     // the fetches that left are the ones the feature needs; the profile and the other buttons' inputs are in none of them
     const toWikidata = outgoing.filter((o) => o.includes("wikidata.org"));
@@ -80,8 +81,8 @@ describe("what each handler does with a sentinel", () => {
 
   it("answers an unexpected failure with a fixed 500 and no text of the input", async () => {
     const spies = (["log", "error", "warn"] as const).map((m) => vi.spyOn(console, m));
-    const BURST = { limit: async () => { throw new Error(`zzsentinel ${S.word}`); } } as unknown as RateLimit;
-    const r = await call("/v1/resolve", { body: { text: S.word }, headers: hdr, env: { ASSETS: assets, BURST } });
+    const RL_RESOLVE = { limit: async () => { throw new Error(`zzsentinel ${S.word}`); } } as unknown as RateLimit;
+    const r = await call("/v1/resolve", { body: { text: S.word }, headers: hdr, env: { ASSETS: assets, RL_RESOLVE } });
     expect(r.status).toBe(500);
     const text = await r.text();
     expect(text).not.toContain("zzsentinel");

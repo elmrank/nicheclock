@@ -32,12 +32,32 @@ database_name = "nicheclock"
 database_id = "REPLACE_WITH_YOUR_D1_ID"
 migrations_dir = "migrations"
 
-# Flood control for the three public "Sends ..." buttons (src/suggest-limits.ts): Cloudflare's free rate-limiting binding. It only knows windows
-# of 10 or 60 seconds, so the hourly and daily per-address caps are counters in D1 (see that file); this binding is the first, cheap gate in front of them.
+# Per-caller limits of the three public "Sends ..." buttons and of the profile tools (src/suggest-limits.ts): Cloudflare's rate-limiting bindings.
+# The counter of a key lives inside Cloudflare; nothing of ours stores an address (the privacy promise). The binding only knows windows of 10 or 60 seconds.
 [[ratelimits]]
-name = "BURST"
+name = "RL_RESOLVE"        # Look up a word, per address
 namespace_id = "17001"
-simple = { limit = 6, period = 10 }
+simple = { limit = 20, period = 60 }
+
+[[ratelimits]]
+name = "RL_SITE"           # Read my site, per address
+namespace_id = "17002"
+simple = { limit = 3, period = 60 }
+
+[[ratelimits]]
+name = "RL_YOUTUBE"        # Read my channel, per address
+namespace_id = "17003"
+simple = { limit = 2, period = 60 }
+
+[[ratelimits]]
+name = "RL_PROFILE"        # trends_for_profile, upcoming_for_profile, resolve_topic: per API key
+namespace_id = "17004"
+simple = { limit = 30, period = 60 }
+
+[[ratelimits]]
+name = "RL_HOST"           # one read of a given site a minute, for everybody (the key is the host name)
+namespace_id = "17005"
+simple = { limit = 1, period = 60 }
 
 # R2: `wrangler r2 bucket create nicheclock-data`
 [[r2_buckets]]

@@ -121,9 +121,9 @@ function limitsBox(h) {
     h("b", { text: "What the three buttons cost, and their limits. " }),
     "They run on nicheclock's free Cloudflare plan (100,000 requests a day for the whole site and 10 ms of processor time per request) and, for channels, on a free Google quota, so each one has a cap, and some caps are shared by everybody:",
     h("ul", {}, [
-      h("li", { text: "Look up a word: 20 an hour from one address. A word that is in the topic list needs no outside call; any other word is also sent to Wikidata." }),
-      h("li", { text: "Read my site: 5 an hour from one address, one read of the same site a minute, and at most 26 requests, 300 KB of sitemap and 15 seconds a read. It obeys robots.txt and says who it is (user agent nicheclock-suggest, see /bot)." }),
-      h("li", { text: "Read my channel (shown only when it is switched on): 5 a day from one address, and 2,000 units of Google's free YouTube quota a day for everybody (3 units a read, about 666 reads)." })]),
+      h("li", { text: "Look up a word: 20 a minute from one address. A word that is in the topic list needs no outside call; any other word is also sent to Wikidata." }),
+      h("li", { text: "Read my site: 3 a minute from one address, one read of the same site a minute, 2,000 reads a day for everybody, and at most 26 requests, 300 KB of sitemap and 15 seconds a read. It obeys robots.txt and says who it is (user agent nicheclock-suggest, see /bot)." }),
+      h("li", { text: "Read my channel (shown only when it is switched on): 2 a minute from one address, and 2,000 units of Google's free YouTube quota a day for everybody (3 units a read, about 666 reads)." })]),
     "When a limit is reached the page says so and typing your topics still works. Nothing is queued and nothing is charged."]);
 }
 function regionLabel(meta, id) {

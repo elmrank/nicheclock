@@ -1,8 +1,12 @@
 export interface Env {
   DB: D1Database;
   BUCKET: R2Bucket;
-  /** Cloudflare rate-limiting binding (wrangler.toml [[ratelimits]]): 6 calls / 10 s per address, in front of the D1 counters (suggest-limits.ts). */
-  BURST?: RateLimit;
+  /** Cloudflare rate-limiting bindings (wrangler.toml [[ratelimits]]), see suggest-limits.ts */
+  RL_RESOLVE?: RateLimit;
+  RL_SITE?: RateLimit;
+  RL_YOUTUBE?: RateLimit;
+  RL_PROFILE?: RateLimit;
+  RL_HOST?: RateLimit;
 
   // [vars] in wrangler.toml
   PUBLIC_BASE_URL: string;

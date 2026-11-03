@@ -10,6 +10,7 @@ import { createJob, getJob, listJobsAdmin, updateJobAdmin } from "./jobs";
 import { authenticate, listOwnKeys, revokeVisible } from "./keys";
 import { handleMcp, originAllowed } from "./mcp";
 import { resolveTopic, trendsForProfile, upcomingForProfile } from "./profile-tools";
+import { checkProfileRate } from "./suggest-limits";
 import { enforce, record } from "./quota";
 import * as beacon from "./beacon";
 import { serveStatic } from "./gate";
@@ -114,19 +115,28 @@ const routes: Route[] = [
     method: "POST",
     re: /^\/v1\/profile\/trends$/,
     endpoint: "POST /v1/profile/trends",
-    handler: async (c) => jsonReply(await trendsForProfile(c.env, objectBody(await jsonBody(c.req)))),
+    handler: async (c) => {
+      await checkProfileRate(c.env, c.key);
+      return jsonReply(await trendsForProfile(c.env, objectBody(await jsonBody(c.req))));
+    },
   },
   {
     method: "POST",
     re: /^\/v1\/profile\/upcoming$/,
     endpoint: "POST /v1/profile/upcoming",
-    handler: async (c) => jsonReply(await upcomingForProfile(c.env, objectBody(await jsonBody(c.req)), c.now)),
+    handler: async (c) => {
+      await checkProfileRate(c.env, c.key);
+      return jsonReply(await upcomingForProfile(c.env, objectBody(await jsonBody(c.req)), c.now));
+    },
   },
   {
     method: "POST",
     re: /^\/v1\/profile\/resolve$/,
     endpoint: "POST /v1/profile/resolve",
-    handler: async (c) => jsonReply(await resolveTopic(c.env, objectBody(await jsonBody(c.req)))),
+    handler: async (c) => {
+      await checkProfileRate(c.env, c.key);
+      return jsonReply(await resolveTopic(c.env, objectBody(await jsonBody(c.req))));
+    },
   },
   {
     method: "GET",

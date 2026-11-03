@@ -7,7 +7,7 @@ import { assets, fixtureJson, shardFiles } from "./assets";
 import { call, json, mkKey } from "./helpers";
 
 beforeEach(() => clearShardCache());
-const env = { ASSETS: assets };
+const env = { ASSETS: assets, RL_PROFILE: undefined };
 const META = { "io.modelcontextprotocol/protocolVersion": MCP_SPEC_VERSION, "io.modelcontextprotocol/clientCapabilities": {} };
 
 /** the three sample profiles of the page (profile.js SAMPLES), as an agent would send them */
@@ -156,5 +156,24 @@ describe("labels", () => {
     const labeled = await json(await call("/v1/profile/trends", { key: k.key, body: { profile: { topics: [{ qid: "Q718", label: "chess" }], region: "US" }, limit: 50 }, env }));
     expect(bare.rows.map((r: any) => r.qid)).toEqual(labeled.rows.map((r: any) => r.qid));
     expect(bare.rows.some((r: any) => /chess player/i.test(r.why))).toBe(true);
+  });
+});
+
+describe("rate limit of the profile tools (per API key, through the binding)", () => {
+  it("answers 429 over the limit, in REST and as a tool error in MCP", async () => {
+    const k = await mkKey();
+    const keys: string[] = [];
+    let n = 0;
+    const RL_PROFILE = { limit: async ({ key }: { key: string }) => { keys.push(key); return { success: ++n <= 2 }; } } as unknown as RateLimit;
+    const e = { ...env, RL_PROFILE };
+    const body = { profile: SAMPLES.chess, limit: 1 };
+    expect((await call("/v1/profile/trends", { key: k.key, body, env: e })).status).toBe(200);
+    expect((await call("/v1/profile/resolve", { key: k.key, body: { text: "chess" }, env: e })).status).toBe(200);
+    const r = await call("/v1/profile/upcoming", { key: k.key, body, env: e });
+    expect(r.status).toBe(429);
+    expect(r.headers.get("retry-after")).toBe("60");
+    expect(keys.every((x) => x === keys[0] && x.startsWith("k_"))).toBe(true);     // the key id, never an address
+    const m = await call("/mcp", { key: k.key, body: { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "resolve_topic", arguments: { text: "chess" }, _meta: META } }, headers: { "mcp-protocol-version": MCP_SPEC_VERSION, "mcp-method": "tools/call", "mcp-name": "resolve_topic", accept: "application/json" }, env: e });
+    expect((await json(m)).result.isError).toBe(true);
   });
 });

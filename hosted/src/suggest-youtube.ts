@@ -88,7 +88,7 @@ export interface YoutubeReply {
 export async function readChannel(input: unknown, env: Env, req: Request, now = new Date()): Promise<YoutubeReply> {
   if (!youtubeEnabled(env)) throw new ApiError(404, "not_available", "Reading a channel is not switched on.");
   const ref = parseChannel(input);
-  await checkCaller(env, req, "youtube", now);
+  await checkCaller(env, req, "youtube");
   if (!(await spendYoutubeUnits(env, UNITS_PER_READ, DAILY_UNIT_CAP, now))) throw new ApiError(429, "quota_exhausted", `Channel reading is used up for today.${TAIL}`);
 
   const ch = await yt(env, "channels", { part: "contentDetails", ...("forHandle" in ref ? { forHandle: ref.forHandle } : { id: ref.id }) });

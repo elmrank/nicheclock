@@ -49,7 +49,7 @@ export async function handleSuggest(req: Request, env: Env, path: string, now = 
     const b = await body(req);
     if (path === "/v1/resolve") {
       const text = cleanText(b.text);
-      await checkCaller(env, req, "resolve", now);
+      await checkCaller(env, req, "resolve");
       const topic = await resolveText(env, text);
       return toResponse(jsonReply({ ok: true, topic }));
     }
