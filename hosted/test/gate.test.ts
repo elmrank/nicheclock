@@ -41,10 +41,10 @@ describe("static site Basic gate", () => {
     }
   });
 
-  it("lets only the opened URLs be indexed (the homepage and /docs/what-is-nicheclock/): they answer index, follow, everything else noindex", async () => {
+  it("lets only the opened URLs be indexed (the homepage, /docs/what-is-nicheclock/, /docs/answers/ and /google-updates/): they answer index, follow, everything else noindex", async () => {
     const ok = { headers: basic("example-user", "s3cret:pw"), env };
-    for (const p of ["/", "/docs/what-is-nicheclock/"]) expect((await call(p, ok)).headers.get("x-robots-tag"), p).toBe("index, follow");
-    for (const p of ["/terms/", "/privacy/", "/docs/", "/docs/api/", "/docs/what-is-nicheclock", "/docs/answers/", "/google-updates/", "/catalog-data/google-updates.json", "/demo/", "/catalog-data/trending.json", "/sitemap.xml", "/robots.txt", "/assets/x.js", "/missing", "/index.html"]) {
+    for (const p of ["/", "/docs/what-is-nicheclock/", "/docs/answers/", "/google-updates/"]) expect((await call(p, ok)).headers.get("x-robots-tag"), p).toBe("index, follow");
+    for (const p of ["/terms/", "/privacy/", "/docs/", "/docs/api/", "/docs/what-is-nicheclock", "/docs/answers", "/google-updates", "/catalog-data/google-updates.json", "/demo/", "/catalog-data/trending.json", "/sitemap.xml", "/robots.txt", "/assets/x.js", "/missing", "/index.html"]) {
       expect((await call(p, ok)).headers.get("x-robots-tag"), p).toBe("noindex, nofollow");
     }
     // a failed login on "/" is a 401, never "index"

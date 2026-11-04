@@ -53,7 +53,7 @@ CONTACT = "nicheclock@elmrank.com"
 # Indexing rule: the homepage first, then one more URL every 2 days. Every other page carries <meta robots noindex> and the
 # Worker adds X-Robots-Tag: noindex (src/index.ts INDEXABLE_PATHS must list the same paths). The sitemap lists INDEXABLE only.
 # Opening a URL later: add its path here AND in src/index.ts, rebuild, deploy.
-INDEXABLE = {"/", "/docs/what-is-nicheclock/"}
+INDEXABLE = {"/", "/docs/what-is-nicheclock/", "/docs/answers/", "/google-updates/"}
 NOINDEX_META = '<meta name="robots" content="noindex,nofollow">'
 INDEX_META = '<meta name="robots" content="index,follow">'
 

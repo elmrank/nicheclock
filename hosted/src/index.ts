@@ -290,7 +290,7 @@ async function handleMcpRoute(req: Request, env: Env, now: Date): Promise<Respon
  * errors alike, says noindex. Opening another URL later = add its path to INDEXABLE_PATHS here, remove the meta robots
  * in the page (site/build.py INDEXABLE) and add it to the sitemap; nothing else changes.
  */
-export const INDEXABLE_PATHS: ReadonlySet<string> = new Set(["/", "/docs/what-is-nicheclock/"]);
+export const INDEXABLE_PATHS: ReadonlySet<string> = new Set(["/", "/docs/what-is-nicheclock/", "/docs/answers/", "/google-updates/"]);
 const NOINDEX_TAG = "noindex, nofollow";
 const INDEX_TAG = "index, follow";
 
